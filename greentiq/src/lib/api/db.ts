@@ -141,7 +141,7 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
   return customers.find((c) => c.id === id) || null;
 }
 
-export async function addCustomer(newCustomerData: Omit<Customer, "id" | "createdDate" | "lastContactDate" | "notes">): Promise<Customer> {
+export async function addCustomer(newCustomerData: Omit<Customer, "id" | "createdDate" | "lastContactDate" | "notes"> & { lastContactDate?: string }): Promise<Customer> {
   await simulateLatency();
   const customers = getCustomers();
 

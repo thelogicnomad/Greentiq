@@ -1,11 +1,6 @@
 import React, { useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Keyboard } from "lucide-react";
+import { Command } from "cmdk";
+import { Search, Filter, Plus, Keyboard, Users, ShieldAlert } from "lucide-react";
 
 interface KeyboardShortcutsHelpProps {
   onToggleFilters: () => void;
@@ -18,14 +13,14 @@ export function KeyboardShortcutsHelp({
   onFocusSearch,
   onOpenAddModal,
 }: KeyboardShortcutsHelpProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K -> Focus Search
+      // Cmd+K or Ctrl+K -> Open Command Palette
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        onFocusSearch();
+        setOpen((prev) => !prev);
       }
       // Cmd+F or Ctrl+F -> Toggle Filters
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
@@ -37,48 +32,74 @@ export function KeyboardShortcutsHelp({
         e.preventDefault();
         onOpenAddModal();
       }
-      // ? -> Keyboard shortcuts dialog
+      // ? -> Open Command Palette
       if (e.key === "?" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) {
         e.preventDefault();
-        setIsOpen((prev) => !prev);
+        setOpen(true);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onToggleFilters, onFocusSearch, onOpenAddModal]);
-
-  const shortcuts = [
-    { key: "Cmd + K", description: "Focus search bar" },
-    { key: "Cmd + F", description: "Toggle advanced filters panel" },
-    { key: "Shift + A", description: "Open Add Customer modal" },
-    { key: "?", description: "Show keyboard shortcuts reference" },
-  ];
+  }, [onToggleFilters, onOpenAddModal]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800 text-slate-100">
-        <DialogHeader>
-          <div className="flex items-center space-x-2 text-blue-400 mb-1">
-            <Keyboard className="h-5 w-5" />
-            <DialogTitle className="text-base font-bold text-slate-100">Keyboard Shortcuts</DialogTitle>
-          </div>
-        </DialogHeader>
+    <Command.Dialog
+      open={open}
+      onOpenChange={setOpen}
+      label="Global Command Palette"
+      className="fixed left-[50%] top-[50%] z-50 w-full max-w-lg translate-x-[-50%] translate-y-[-50%] overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-2xl animate-in fade-in-0 zoom-in-95 dark:border-slate-800 dark:bg-slate-900"
+    >
+      <div className="flex items-center border-b border-slate-800 px-3">
+        <Search className="mr-2 h-4 w-4 shrink-0 text-slate-400" />
+        <Command.Input
+          placeholder="Type a command or search action (e.g. search, filter, add)..."
+          className="flex h-11 w-full rounded-md bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+        />
+      </div>
+      <Command.List className="max-h-[300px] overflow-y-auto p-2 text-slate-200">
+        <Command.Empty className="py-6 text-center text-xs text-slate-500">
+          No matching command found.
+        </Command.Empty>
 
-        <div className="space-y-2 py-2">
-          {shortcuts.map((s) => (
-            <div
-              key={s.key}
-              className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs"
-            >
-              <span className="text-slate-300">{s.description}</span>
-              <kbd className="rounded border border-slate-700 bg-slate-800 px-2 py-0.5 font-mono text-[10px] font-bold text-blue-400">
-                {s.key}
-              </kbd>
-            </div>
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
+        <Command.Group heading="Quick Actions" className="px-2 py-1.5 text-xs font-semibold text-slate-400">
+          <Command.Item
+            onSelect={() => {
+              setOpen(false);
+              onFocusSearch();
+            }}
+            className="flex cursor-pointer select-none items-center rounded-lg px-3 py-2 text-xs hover:bg-slate-800 hover:text-white"
+          >
+            <Search className="mr-2 h-4 w-4 text-blue-400" />
+            <span>Focus Search Input</span>
+            <kbd className="ml-auto font-mono text-[10px] text-slate-400">Cmd + K</kbd>
+          </Command.Item>
+
+          <Command.Item
+            onSelect={() => {
+              setOpen(false);
+              onToggleFilters();
+            }}
+            className="flex cursor-pointer select-none items-center rounded-lg px-3 py-2 text-xs hover:bg-slate-800 hover:text-white"
+          >
+            <Filter className="mr-2 h-4 w-4 text-emerald-400" />
+            <span>Toggle Advanced Filters Panel</span>
+            <kbd className="ml-auto font-mono text-[10px] text-slate-400">Cmd + F</kbd>
+          </Command.Item>
+
+          <Command.Item
+            onSelect={() => {
+              setOpen(false);
+              onOpenAddModal();
+            }}
+            className="flex cursor-pointer select-none items-center rounded-lg px-3 py-2 text-xs hover:bg-slate-800 hover:text-white"
+          >
+            <Plus className="mr-2 h-4 w-4 text-purple-400" />
+            <span>Add New Customer</span>
+            <kbd className="ml-auto font-mono text-[10px] text-slate-400">Shift + A</kbd>
+          </Command.Item>
+        </Command.Group>
+      </Command.List>
+    </Command.Dialog>
   );
 }

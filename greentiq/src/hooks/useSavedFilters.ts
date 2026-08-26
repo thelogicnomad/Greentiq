@@ -105,8 +105,8 @@ export function useReorderSavedFilters() {
       return { previousFilters };
     },
     onError: (_error, _orderedIds, context) => {
-      if (context?.previousQueries) {
-        queryClient.setQueryData(["saved-filters"], context.previousQueries);
+      if (context?.previousFilters) {
+        queryClient.setQueryData(["saved-filters"], context.previousFilters);
       }
       toast.error("Failed to update filter order");
     },

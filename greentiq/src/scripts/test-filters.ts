@@ -2,7 +2,7 @@ import { queryCustomers, addCustomer, getSavedFilters, reorderSavedFilters } fro
 import { customerSchema } from "../lib/schemas";
 
 async function runFilterCompositionTests() {
-  console.log("=== RUNNING ADVANCED CRM FILTER COMPOSITION TESTS ===\n");
+  console.log("=== RUNNING ADVANCED CRM COMPREHENSIVE TEST SUITE ===\n");
 
   let totalTests = 0;
   let passedTests = 0;
@@ -17,7 +17,7 @@ async function runFilterCompositionTests() {
     }
   }
 
-  // Test 1: Search query across name/email/company
+  // Test 1: Pure Search
   const searchResult = await queryCustomers({ search: "acme" });
   assert(
     searchResult.data.length > 0 &&
@@ -27,7 +27,7 @@ async function runFilterCompositionTests() {
           c.email.toLowerCase().includes("acme") ||
           c.company.toLowerCase().includes("acme")
       ),
-    "Search 'acme' returns only items containing 'acme' in name, email, or company"
+    "Search 'acme' returns items containing 'acme' in name, email, or company"
   );
 
   // Test 2: Status multi-select filter
@@ -46,7 +46,7 @@ async function runFilterCompositionTests() {
     "Filter by company ['Acme Corp', 'Globex'] returns only customers from those companies"
   );
 
-  // Test 4: Composition of Search + Status + Company
+  // Test 4: Composition of Search + Status + Company (AND Logic)
   const combinedResult = await queryCustomers({
     search: "a",
     status: ["active"],
@@ -81,10 +81,10 @@ async function runFilterCompositionTests() {
     "Date Range + Email filter composes correctly"
   );
 
-  // Test 6: Zod validation failure on bad payload
+  // Test 6: Zod validation failure on POST payload
   const badPayload = {
     name: "",
-    email: "not-an-email",
+    email: "invalid-email-address",
     phone: "abc",
     status: "invalid-status",
   };
@@ -92,11 +92,32 @@ async function runFilterCompositionTests() {
   assert(!validationResult.success, "Zod schema correctly rejects invalid customer payload");
   if (!validationResult.success) {
     const fieldErrors = validationResult.error.flatten().fieldErrors;
-    assert(Boolean(fieldErrors.name && fieldErrors.email && fieldErrors.phone), "Validation returns field-level errors for name, email, phone");
+    assert(
+      Boolean(fieldErrors.name && fieldErrors.email && fieldErrors.phone),
+      "Validation returns field-level error structure for name, email, phone"
+    );
   }
 
-  // Test 7: Saved filter reordering
+  // Test 7: Zod partial validation failure on PATCH payload
+  const badPatchPayload = { email: "bad-patch-email" };
+  const patchValidation = customerSchema.partial().safeParse(badPatchPayload);
+  assert(!patchValidation.success, "PATCH partial validation correctly rejects invalid email string");
+  if (!patchValidation.success) {
+    const fieldErrors = patchValidation.error.flatten().fieldErrors;
+    assert(Boolean(fieldErrors.email), "PATCH validation returns field-level error for email");
+  }
+
+  // Test 8: Pre-built filter templates seed check
   const initialFilters = await getSavedFilters();
+  const templateNames = initialFilters.map((f) => f.name);
+  assert(
+    templateNames.includes("Active Customers") &&
+      templateNames.includes("Recent Contacts") &&
+      templateNames.includes("Inactive Leads"),
+    "Pre-built filter templates (Active Customers, Recent Contacts, Inactive Leads) exist on initial load"
+  );
+
+  // Test 9: Saved filter reordering
   const reversedIds = initialFilters.map((f) => f.id).reverse();
   const reorderedFilters = await reorderSavedFilters(reversedIds);
   assert(

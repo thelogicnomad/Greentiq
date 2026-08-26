@@ -110,7 +110,7 @@ export function generateSeedSavedFilters(): SavedFilter[] {
     {
       id: "filter-3",
       name: "Inactive Leads",
-      isPinned: false,
+      isPinned: true,
       order: 2,
       filters: {
         status: ["inactive", "lead"],
