@@ -4,8 +4,13 @@ import { Providers } from "./providers";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
-  title: "Advanced CRM Dashboard",
+  title: "Greentiq CRM Dashboard",
   description: "Customer management dashboard built with Next.js 15, TanStack Query v5, Tailwind CSS, shadcn/ui, dnd-kit, and Zod validation.",
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
