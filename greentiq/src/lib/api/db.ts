@@ -1,22 +1,24 @@
-import { Customer, CustomerQueryParams, CustomerStatus, PaginatedCustomersResponse, SavedFilter } from "@/types";
+import { Customer, CustomerNote, CustomerQueryParams, CustomerStatus, PaginatedCustomersResponse, SavedFilter } from "@/types";
 import { generateSeedCustomers, generateSeedSavedFilters } from "./seed";
 
-// Module-level in-memory store
-let customersStore: Customer[] | null = null;
-let savedFiltersStore: SavedFilter[] | null = null;
+// Global singleton in-memory store attached to globalThis for Next.js App Router cross-route consistency
+const globalForCRM = globalThis as unknown as {
+  customersStore?: Customer[];
+  savedFiltersStore?: SavedFilter[];
+};
 
 function getCustomers(): Customer[] {
-  if (!customersStore) {
-    customersStore = generateSeedCustomers(150);
+  if (!globalForCRM.customersStore) {
+    globalForCRM.customersStore = generateSeedCustomers(150);
   }
-  return customersStore;
+  return globalForCRM.customersStore;
 }
 
 function getSavedFiltersStore(): SavedFilter[] {
-  if (!savedFiltersStore) {
-    savedFiltersStore = generateSeedSavedFilters();
+  if (!globalForCRM.savedFiltersStore) {
+    globalForCRM.savedFiltersStore = generateSeedSavedFilters();
   }
-  return savedFiltersStore;
+  return globalForCRM.savedFiltersStore;
 }
 
 export async function simulateLatency(min = 300, max = 600): Promise<void> {
@@ -61,7 +63,6 @@ export async function queryCustomers(params: CustomerQueryParams): Promise<Pagin
     }
   }
   if (params.dateTo) {
-    // Set to end of the day for dateTo
     const toDateObj = new Date(params.dateTo);
     toDateObj.setHours(23, 59, 59, 999);
     const toTime = toDateObj.getTime();
@@ -103,7 +104,6 @@ export async function queryCustomers(params: CustomerQueryParams): Promise<Pagin
       aVal = a.dealValue || 0;
       bVal = b.dealValue || 0;
     } else {
-      // default: lastContactDate
       aVal = new Date(a.lastContactDate).getTime();
       bVal = new Date(b.lastContactDate).getTime();
     }
@@ -122,7 +122,6 @@ export async function queryCustomers(params: CustomerQueryParams): Promise<Pagin
   const startIndex = (page - 1) * pageSize;
   const paginatedData = filtered.slice(startIndex, startIndex + pageSize);
 
-  // Available unique companies list for multi-select dropdown
   const availableCompanies = Array.from(new Set(allCustomers.map((c) => c.company))).sort();
 
   return {
@@ -141,7 +140,7 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
   return customers.find((c) => c.id === id) || null;
 }
 
-export async function addCustomer(newCustomerData: Omit<Customer, "id" | "createdDate" | "lastContactDate" | "notes"> & { lastContactDate?: string }): Promise<Customer> {
+export async function addCustomer(newCustomerData: Omit<Customer, "id" | "createdDate" | "lastContactDate" | "notes"> & { lastContactDate?: string; notes?: string }): Promise<Customer> {
   await simulateLatency();
   const customers = getCustomers();
 
@@ -151,22 +150,43 @@ export async function addCustomer(newCustomerData: Omit<Customer, "id" | "create
     id: `cust-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     createdDate: nowISO,
     lastContactDate: newCustomerData.lastContactDate || nowISO,
-    notes: [],
+    notes: newCustomerData.notes && newCustomerData.notes.trim()
+      ? [{ id: `note-${Date.now()}`, content: newCustomerData.notes.trim(), createdAt: nowISO }]
+      : [],
   };
 
   customers.unshift(newCustomer);
   return newCustomer;
 }
 
-export async function updateCustomer(id: string, updates: Partial<Customer>): Promise<Customer | null> {
+export async function updateCustomer(
+  id: string,
+  updates: Partial<Omit<Customer, "notes">> & { notes?: string | CustomerNote[] }
+): Promise<Customer | null> {
   await simulateLatency();
   const customers = getCustomers();
   const index = customers.findIndex((c) => c.id === id);
   if (index === -1) return null;
 
+  const existingNotes = customers[index].notes || [];
+  let updatedNotes = [...existingNotes];
+
+  if (typeof updates.notes === "string" && updates.notes.trim() !== "") {
+    updatedNotes.unshift({
+      id: `note-${Date.now()}`,
+      content: updates.notes.trim(),
+      createdAt: new Date().toISOString(),
+    });
+  } else if (Array.isArray(updates.notes)) {
+    updatedNotes = updates.notes;
+  }
+
+  const { notes, ...otherUpdates } = updates;
+
   const updated = {
     ...customers[index],
-    ...updates,
+    ...otherUpdates,
+    notes: updatedNotes,
   };
   customers[index] = updated;
   return updated;
@@ -225,7 +245,6 @@ export async function deleteSavedFilter(id: string): Promise<boolean> {
   if (index === -1) return false;
 
   filters.splice(index, 1);
-  // Re-index remaining filters
   filters.forEach((f, idx) => {
     f.order = idx;
   });
@@ -247,7 +266,6 @@ export async function reorderSavedFilters(orderedIds: string[]): Promise<SavedFi
     }
   });
 
-  // Handle any items not in orderedIds
   filters.forEach((item) => {
     if (!orderedIds.includes(item.id)) {
       item.order = reordered.length;
@@ -255,6 +273,6 @@ export async function reorderSavedFilters(orderedIds: string[]): Promise<SavedFi
     }
   });
 
-  savedFiltersStore = reordered;
+  globalForCRM.savedFiltersStore = reordered;
   return reordered;
 }

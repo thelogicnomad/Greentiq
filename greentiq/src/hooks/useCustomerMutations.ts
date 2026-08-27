@@ -22,6 +22,7 @@ export function useAddCustomer() {
     },
     onSuccess: (newCustomer: Customer) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customers-infinite"] });
       toast.success(`Customer "${newCustomer.name}" created successfully`);
     },
     onError: (error: Error) => {
@@ -49,6 +50,7 @@ export function useUpdateCustomer() {
     },
     onSuccess: (updatedCustomer: Customer) => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customers-infinite"] });
       toast.success(`Customer "${updatedCustomer.name}" updated successfully`);
     },
     onError: (error: Error) => {
@@ -72,15 +74,12 @@ export function useDeleteCustomer() {
       }
       return response.json();
     },
-    // Optimistic update implementation
     onMutate: async (deletedId: string) => {
-      // 1. Cancel any outgoing refetches so they don't overwrite our optimistic update
       await queryClient.cancelQueries({ queryKey: ["customers"] });
+      await queryClient.cancelQueries({ queryKey: ["customers-infinite"] });
 
-      // 2. Snapshot the previous queries state
       const previousQueries = queryClient.getQueriesData<PaginatedCustomersResponse>({ queryKey: ["customers"] });
 
-      // 3. Optimistically update all matching customer queries in cache
       queryClient.setQueriesData<PaginatedCustomersResponse>(
         { queryKey: ["customers"] },
         (oldData) => {
@@ -93,11 +92,9 @@ export function useDeleteCustomer() {
         }
       );
 
-      // Return snapshot context for rollback
       return { previousQueries };
     },
     onError: (error: Error, _deletedId, context) => {
-      // Rollback on failure
       if (context?.previousQueries) {
         context.previousQueries.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
@@ -109,8 +106,8 @@ export function useDeleteCustomer() {
       toast.success("Customer deleted successfully");
     },
     onSettled: () => {
-      // Refetch to ensure server sync
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customers-infinite"] });
     },
   });
 }
@@ -134,6 +131,7 @@ export function useAddCustomerNote() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
+      queryClient.invalidateQueries({ queryKey: ["customers-infinite"] });
       toast.success("Note added successfully");
     },
     onError: (error: Error) => {

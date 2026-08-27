@@ -17,27 +17,40 @@ export function KeyboardShortcutsHelp({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      // 1. Guard Check: Bail out immediately if user is typing inside a form field or editable element
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+          target.isContentEditable ||
+          target.closest("[role='dialog']"))
+      ) {
+        return;
+      }
+
+      // 2. Strict Modifier Key Checks: Require Meta/Ctrl modifier key for shortcuts
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+
+      if (isCmdOrCtrl && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen((prev) => !prev);
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "f") {
+      } else if (isCmdOrCtrl && e.key.toLowerCase() === "f") {
         e.preventDefault();
         onToggleFilters();
-      }
-      if (e.shiftKey && e.key.toLowerCase() === "a") {
+      } else if (isCmdOrCtrl && e.shiftKey && e.key.toLowerCase() === "a") {
+        // Shift+A is only triggered with Cmd/Ctrl+Shift+A, preventing plain capital "A" interference
         e.preventDefault();
         onOpenAddModal();
-      }
-      if (e.key === "?" && !["INPUT", "TEXTAREA", "SELECT"].includes((e.target as HTMLElement).tagName)) {
+      } else if (e.key === "?") {
         e.preventDefault();
         setOpen(true);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
+    // 3. Proper Cleanup: Remove event listener on unmount or re-render
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onToggleFilters, onOpenAddModal]);
+  }, [onToggleFilters, onFocusSearch, onOpenAddModal]);
 
   return (
     <Command.Dialog
@@ -92,7 +105,7 @@ export function KeyboardShortcutsHelp({
           >
             <Plus className="mr-2 h-4 w-4 text-purple-500" />
             <span>Add New Customer</span>
-            <kbd className="ml-auto font-mono text-[10px] text-muted-foreground">Shift + A</kbd>
+            <kbd className="ml-auto font-mono text-[10px] text-muted-foreground">Cmd + Shift + A</kbd>
           </Command.Item>
         </Command.Group>
       </Command.List>

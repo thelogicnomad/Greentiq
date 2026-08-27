@@ -10,9 +10,10 @@ import { AppSidebar } from "@/components/crm/AppSidebar";
 import { DashboardStatCards } from "@/components/crm/DashboardStatCards";
 import { CustomerTable } from "@/components/crm/CustomerTable";
 import { AdvancedFiltersSheet } from "@/components/crm/AdvancedFiltersSheet";
-import { CustomerDetailsDrawer } from "@/components/crm/CustomerDetailsDrawer";
+import { CustomerDetailsModal } from "@/components/crm/CustomerDetailsModal";
 import { CustomerFormModal } from "@/components/crm/CustomerFormModal";
 import { DeleteConfirmDialog } from "@/components/crm/DeleteConfirmDialog";
+import { BulkDeleteConfirmDialog } from "@/components/crm/BulkDeleteConfirmDialog";
 import { BulkActionsBar } from "@/components/crm/BulkActionsBar";
 import { KeyboardShortcutsHelp } from "@/components/crm/KeyboardShortcutsHelp";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -69,8 +70,9 @@ export default function CRMDashboardPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Bulk selections
+  // Bulk selections & Bulk Delete Modal state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
   // Modals / Drawers state
   const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
@@ -97,7 +99,7 @@ export default function CRMDashboardPage() {
   // Table View Query (Paginated)
   const tableQueryResult = useCustomers({ ...queryParams, page, pageSize });
 
-  // Card View Query (Infinite Scroll - Item 1)
+  // Card View Query (Infinite Scroll)
   const infiniteQueryResult = useInfiniteCustomers(queryParams);
 
   const customers = tableQueryResult.data?.data || [];
@@ -144,13 +146,14 @@ export default function CRMDashboardPage() {
     }
   };
 
-  // Bulk Actions
+  // Bulk Actions: Confirmed Deletion
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     try {
       await Promise.all(selectedIds.map((id) => deleteMutation.mutateAsync(id)));
       toast.success(`Deleted ${selectedIds.length} customers`);
       setSelectedIds([]);
+      setIsBulkDeleteModalOpen(false);
     } catch (err) {
       toast.error("Failed to delete some selected customers");
     }
@@ -245,9 +248,9 @@ export default function CRMDashboardPage() {
                 </p>
               </div>
 
-              {/* Action Buttons: View Toggle next to Export CSV (Item 2) */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-2">
-                {/* Table / Card View Mode Toggle Group next to Export CSV (Item 2) */}
+                {/* Table / Card View Mode Toggle Group */}
                 <div className="flex items-center space-x-1 border border-border bg-muted/40 p-0.5 rounded-lg h-9">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -405,7 +408,7 @@ export default function CRMDashboardPage() {
             </div>
           </div>
 
-          {/* Customer Table / Card View (Item 1 & 2) */}
+          {/* Customer Table / Card View */}
           <CustomerTable
             customers={customers}
             isLoading={tableQueryResult.isLoading}
@@ -434,7 +437,6 @@ export default function CRMDashboardPage() {
               setIsAddEditModalOpen(true);
             }}
             onDelete={(c) => setCustomerToDelete(c)}
-            // Infinite Query props for Card View (Item 1)
             infiniteData={infiniteQueryResult.data}
             isInfiniteLoading={infiniteQueryResult.isLoading}
             isFetchingNextPage={infiniteQueryResult.isFetchingNextPage}
@@ -457,8 +459,8 @@ export default function CRMDashboardPage() {
         activeFilterCount={activeFilterCount}
       />
 
-      {/* Customer Details Drawer */}
-      <CustomerDetailsDrawer
+      {/* Customer Details Modal */}
+      <CustomerDetailsModal
         customer={customerToView}
         isOpen={Boolean(customerToView)}
         onClose={() => setCustomerToView(null)}
@@ -483,18 +485,27 @@ export default function CRMDashboardPage() {
         customerToEdit={customerToEdit}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Single Customer Delete Confirmation Dialog */}
       <DeleteConfirmDialog
         customer={customerToDelete}
         isOpen={Boolean(customerToDelete)}
         onClose={() => setCustomerToDelete(null)}
       />
 
+      {/* Bulk Customer Delete Confirmation Dialog */}
+      <BulkDeleteConfirmDialog
+        selectedCount={selectedIds.length}
+        isOpen={isBulkDeleteModalOpen}
+        onClose={() => setIsBulkDeleteModalOpen(false)}
+        onConfirm={handleBulkDelete}
+        isDeleting={deleteMutation.isPending}
+      />
+
       {/* Floating Bulk Actions Bar */}
       <BulkActionsBar
         selectedCount={selectedIds.length}
         onClearSelection={() => setSelectedIds([])}
-        onBulkDelete={handleBulkDelete}
+        onBulkDelete={() => setIsBulkDeleteModalOpen(true)}
         onBulkStatusChange={handleBulkStatusChange}
         onExportCsv={handleExportCsv}
       />

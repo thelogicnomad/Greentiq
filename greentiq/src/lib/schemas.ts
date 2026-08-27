@@ -18,6 +18,7 @@ export const customerSchema = z.object({
   ),
   accountOwner: z.string().optional(),
   lastContactDate: z.string().optional(),
+  notes: z.string().optional(),
 });
 
 export type CustomerFormValues = z.infer<typeof customerSchema>;
