@@ -1,6 +1,0 @@
-{
-  "/api/customers/[id]/route": "app/api/customers/[id]/route.js",
-  "/api/customers/route": "app/api/customers/route.js",
-  "/api/saved-filters/route": "app/api/saved-filters/route.js",
-  "/page": "app/page.js"
-}
