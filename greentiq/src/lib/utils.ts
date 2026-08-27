@@ -38,3 +38,13 @@ export function getStatusBadgeVariant(status: string): { bg: string; text: strin
       return { bg: "bg-gray-500/10", text: "text-gray-400", border: "border-gray-500/30" };
   }
 }
+
+export function getInitials(name?: string): string {
+  if (!name) return "";
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .substring(0, 2)
+    .toUpperCase();
+}
