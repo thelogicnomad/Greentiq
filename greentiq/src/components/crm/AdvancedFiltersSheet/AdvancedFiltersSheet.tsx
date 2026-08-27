@@ -123,7 +123,7 @@ export function AdvancedFiltersSheet({
             <Filter className="h-5 w-5 text-primary" />
             <h3 className="text-base font-semibold text-foreground">Filters</h3>
             {activeFilterCount > 0 && (
-              <Badge variant="default" className="bg-primary text-primary-foreground font-bold">
+              <Badge variant="default" className="bg-primary text-primary-foreground font-bold border-none">
                 {activeFilterCount}
               </Badge>
             )}

@@ -63,10 +63,10 @@ export function CustomerDetailsModal({
 
           <div className="flex items-center space-x-2 shrink-0">
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={() => onDelete(customer)}
-              className="border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground text-xs h-8"
+              className="bg-destructive/15 text-destructive hover:bg-destructive hover:text-destructive-foreground border-none text-xs h-8 font-medium"
             >
               <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
             </Button>

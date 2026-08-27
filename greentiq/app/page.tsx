@@ -382,16 +382,16 @@ export default function CRMDashboardPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => setIsFiltersSheetOpen(true)}
-                  className={`h-9 w-full text-xs border-border bg-background font-medium ${
+                  className={`h-9 w-full text-xs font-medium transition-colors ${
                     activeFilterCount > 0
-                      ? "border-primary/50 text-primary bg-primary/10"
-                      : "text-foreground hover:bg-accent"
+                      ? "border-primary text-primary bg-primary/10 hover:bg-primary/20"
+                      : "border-border bg-background text-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
-                  <Filter className="mr-1.5 h-3.5 w-3.5 text-primary" />
-                  Filters
+                  <Filter className="mr-1.5 h-3.5 w-3.5 text-primary shrink-0" />
+                  <span>Filters</span>
                   {activeFilterCount > 0 && (
-                    <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+                    <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground border-none shrink-0">
                       {activeFilterCount}
                     </span>
                   )}

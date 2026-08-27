@@ -25,17 +25,17 @@ export function formatCurrency(value?: number): string {
 export function getStatusBadgeVariant(status: string): { bg: string; text: string; border: string } {
   switch (status) {
     case "active":
-      return { bg: "bg-[var(--status-active-bg)]", text: "text-[var(--status-active-text)]", border: "border-[var(--status-active-text)]/30" };
+      return { bg: "bg-[var(--status-active-bg)]", text: "text-[var(--status-active-text)]", border: "border-transparent" };
     case "prospect":
-      return { bg: "bg-[var(--status-prospect-bg)]", text: "text-[var(--status-prospect-text)]", border: "border-[var(--status-prospect-text)]/30" };
+      return { bg: "bg-[var(--status-prospect-bg)]", text: "text-[var(--status-prospect-text)]", border: "border-transparent" };
     case "lead":
-      return { bg: "bg-[var(--status-lead-bg)]", text: "text-[var(--status-lead-text)]", border: "border-[var(--status-lead-text)]/30" };
+      return { bg: "bg-[var(--status-lead-bg)]", text: "text-[var(--status-lead-text)]", border: "border-transparent" };
     case "inactive":
-      return { bg: "bg-transparent", text: "text-[var(--status-inactive-text)]", border: "border-[var(--status-inactive-text)]/30" };
+      return { bg: "bg-transparent", text: "text-[var(--status-inactive-text)]", border: "border-transparent" };
     case "archived":
-      return { bg: "bg-[var(--status-archived-bg)]", text: "text-[var(--status-archived-text)]", border: "border-[var(--status-archived-text)]/30" };
+      return { bg: "bg-[var(--status-archived-bg)]", text: "text-[var(--status-archived-text)]", border: "border-transparent" };
     default:
-      return { bg: "bg-muted/40", text: "text-muted-foreground", border: "border-border" };
+      return { bg: "bg-muted/40", text: "text-muted-foreground", border: "border-transparent" };
   }
 }
 

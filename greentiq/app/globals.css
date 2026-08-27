@@ -145,6 +145,27 @@ body {
     0 1px 1px rgba(0, 0, 0, 0.12);
 }
 
+/* Sonner Toast Icon Colors */
+[data-sonner-toast][data-type="success"] [data-icon],
+[data-sonner-toast][data-type="success"] svg {
+  color: #43bc58 !important;
+}
+
+[data-sonner-toast][data-type="error"] [data-icon],
+[data-sonner-toast][data-type="error"] svg {
+  color: #f34e52 !important;
+}
+
+[data-sonner-toast][data-type="info"] [data-icon],
+[data-sonner-toast][data-type="info"] svg {
+  color: #55ccff !important;
+}
+
+[data-sonner-toast][data-type="warning"] [data-icon],
+[data-sonner-toast][data-type="warning"] svg {
+  color: #ffcc00 !important;
+}
+
 /* Custom sleek scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
