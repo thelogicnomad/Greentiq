@@ -209,14 +209,14 @@ export function AdvancedFiltersSheet({
         </div>
 
         {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 sm:space-y-6">
           {/* Save Filter Preset Bar */}
           <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 p-3">
-            <div className="flex items-center space-x-1.5">
-              <span className="text-xs text-foreground font-medium">Save filter combination?</span>
+            <div className="flex items-center space-x-1.5 min-w-0">
+              <span className="text-xs text-foreground font-medium truncate">Save filter combination?</span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button type="button" className="text-muted-foreground hover:text-foreground p-0.5">
+                  <button type="button" className="text-muted-foreground hover:text-foreground p-0.5 shrink-0">
                     <Info className="h-3.5 w-3.5" />
                   </button>
                 </TooltipTrigger>
@@ -236,7 +236,7 @@ export function AdvancedFiltersSheet({
               variant="outline"
               size="sm"
               onClick={() => setIsSaveModalOpen(true)}
-              className="h-7 text-xs border-border bg-background text-foreground"
+              className="h-7 text-xs border-border bg-background text-foreground shrink-0"
             >
               <BookmarkPlus className="mr-1 h-3.5 w-3.5 text-primary" /> Save Filter
             </Button>
@@ -288,7 +288,7 @@ export function AdvancedFiltersSheet({
               </PopoverTrigger>
               <PopoverContent
                 align="start"
-                className="z-50 w-[310px] rounded-lg border border-border bg-popover text-popover-foreground p-2 shadow-xl"
+                className="z-50 w-[calc(100vw-3rem)] sm:w-[310px] rounded-lg border border-border bg-popover text-popover-foreground p-2 shadow-xl"
               >
                 <div className="flex items-center space-x-2 border-b border-border pb-2 mb-2 px-1">
                   <Search className="h-3.5 w-3.5 text-muted-foreground" />
@@ -331,13 +331,13 @@ export function AdvancedFiltersSheet({
                 {draftFilters.companies.map((comp) => (
                   <span
                     key={comp}
-                    className="inline-flex items-center space-x-1 rounded-md bg-accent border border-border px-2 py-0.5 text-xs text-foreground"
+                    className="inline-flex items-center space-x-1 rounded-md bg-accent border border-border px-2 py-0.5 text-xs text-foreground max-w-full"
                   >
                     <span className="truncate max-w-[140px]">{comp}</span>
                     <button
                       type="button"
                       onClick={() => handleCompanyRemove(comp)}
-                      className="text-muted-foreground hover:text-destructive ml-1"
+                      className="text-muted-foreground hover:text-destructive ml-1 shrink-0"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -347,12 +347,12 @@ export function AdvancedFiltersSheet({
             )}
           </div>
 
-          {/* 3. Date Range Fields (Exact Local Date Formatting via format(date, "yyyy-MM-dd")) */}
+          {/* 3. Date Range Fields */}
           <div className="space-y-3">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Date Range (Last Contact)
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Date From */}
               <div>
                 <span className="text-[11px] text-muted-foreground mb-1 block">From</span>
@@ -489,7 +489,7 @@ export function AdvancedFiltersSheet({
 
         {/* Footer Apply Button */}
         <div className="border-t border-border p-4 bg-muted/40 backdrop-blur-xs">
-          <Button onClick={handleApply} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium">
+          <Button onClick={handleApply} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-xs">
             Apply Filters
           </Button>
         </div>
@@ -497,7 +497,7 @@ export function AdvancedFiltersSheet({
 
       {/* Save Filter Modal */}
       <Dialog open={isSaveModalOpen} onOpenChange={setIsSaveModalOpen}>
-        <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground">
+        <DialogContent className="w-[95vw] sm:max-w-md bg-card border-border text-card-foreground rounded-2xl p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle>Save Filter Combination</DialogTitle>
           </DialogHeader>
@@ -508,21 +508,21 @@ export function AdvancedFiltersSheet({
               placeholder="e.g. Q3 Tech Prospect Leads"
               value={newPresetName}
               onChange={(e) => setNewPresetName(e.target.value)}
-              className="bg-background border-input text-foreground"
+              className="bg-background border-input text-foreground text-xs"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
             <Button
               variant="ghost"
               onClick={() => setIsSaveModalOpen(false)}
-              className="text-muted-foreground"
+              className="w-full sm:w-auto text-muted-foreground text-xs"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSavePreset}
               disabled={!newPresetName.trim() || addSavedFilterMutation.isPending}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 text-xs"
             >
               Save Preset
             </Button>

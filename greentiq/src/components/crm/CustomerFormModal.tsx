@@ -111,14 +111,14 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl bg-card border-border text-card-foreground p-0 gap-0 overflow-hidden shadow-2xl">
-        <DialogHeader className="p-6 border-b border-border">
-          <DialogTitle className="text-xl font-bold">
+      <DialogContent className="w-[95vw] sm:max-w-xl bg-card border-border text-card-foreground p-0 gap-0 overflow-hidden shadow-2xl rounded-2xl">
+        <DialogHeader className="p-4 sm:p-6 border-b border-border">
+          <DialogTitle className="text-lg sm:text-xl font-bold">
             {isEditing ? "Edit Customer" : "Add Customer"}
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 px-7 py-5 max-h-[75vh] overflow-y-auto pr-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 px-4 sm:px-7 py-5 max-h-[75vh] overflow-y-auto pr-3 sm:pr-4">
           {/* Name */}
           <div className="space-y-1">
             <label className="text-xs font-semibold text-foreground">
@@ -127,7 +127,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
             <Input
               {...register("name")}
               placeholder="e.g. John Doe"
-              className={`bg-background border-input text-foreground ${
+              className={`bg-background border-input text-foreground text-xs ${
                 errors.name ? "border-destructive" : ""
               }`}
             />
@@ -143,7 +143,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
               <Input
                 {...register("email")}
                 placeholder="john.doe@example.com"
-                className={`bg-background border-input text-foreground ${
+                className={`bg-background border-input text-foreground text-xs ${
                   errors.email ? "border-destructive" : ""
                 }`}
               />
@@ -157,7 +157,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
               <Input
                 {...register("phone")}
                 placeholder="+1 (555) 123-4567"
-                className={`bg-background border-input text-foreground ${
+                className={`bg-background border-input text-foreground text-xs ${
                   errors.phone ? "border-destructive" : ""
                 }`}
               />
@@ -172,7 +172,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
               <Input
                 {...register("company")}
                 placeholder="Acme Corp"
-                className="bg-background border-input text-foreground"
+                className="bg-background border-input text-foreground text-xs"
               />
               {errors.company && <p className="text-[11px] text-destructive font-medium">{errors.company.message}</p>}
             </div>
@@ -182,7 +182,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
               <Input
                 {...register("jobTitle")}
                 placeholder="Marketing Director"
-                className="bg-background border-input text-foreground"
+                className="bg-background border-input text-foreground text-xs"
               />
             </div>
           </div>
@@ -195,12 +195,12 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
                 value={currentStatus}
                 onValueChange={(val) => setValue("status", val as any)}
               >
-                <SelectTrigger className="bg-background border-input text-foreground capitalize">
+                <SelectTrigger className="bg-background border-input text-foreground capitalize text-xs">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover border-border text-popover-foreground">
                   {STATUSES.map((st) => (
-                    <SelectItem key={st} value={st} className="capitalize">
+                    <SelectItem key={st} value={st} className="capitalize text-xs">
                       {st}
                     </SelectItem>
                   ))}
@@ -248,7 +248,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
                 type="number"
                 {...register("dealValue")}
                 placeholder="45000"
-                className="bg-background border-input text-foreground"
+                className="bg-background border-input text-foreground text-xs"
               />
               {errors.dealValue && (
                 <p className="text-[11px] text-destructive font-medium">{errors.dealValue.message}</p>
@@ -260,7 +260,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
               <Input
                 {...register("accountOwner")}
                 placeholder="Alex Rivera"
-                className="bg-background border-input text-foreground"
+                className="bg-background border-input text-foreground text-xs"
               />
             </div>
           </div>
@@ -278,19 +278,19 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
             />
           </div>
 
-          <DialogFooter className="pt-4 border-t border-border mt-2">
+          <DialogFooter className="pt-4 border-t border-border mt-2 flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
             <Button
               type="button"
               variant="ghost"
               onClick={onClose}
-              className="text-muted-foreground"
+              className="w-full sm:w-auto text-muted-foreground text-xs"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-6"
+              className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-6 text-xs"
             >
               {isPending
                 ? isEditing

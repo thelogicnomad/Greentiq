@@ -41,26 +41,26 @@ export function DeleteConfirmDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+      <DialogContent className="w-[95vw] sm:max-w-md bg-card border-border text-card-foreground rounded-2xl p-4 sm:p-6">
         <DialogHeader>
-          <div className="flex items-center space-x-3 text-rose-600 dark:text-rose-400 mb-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20">
+          <div className="flex items-center space-x-3 text-destructive mb-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 border border-destructive/20 shrink-0">
               <AlertTriangle className="h-5 w-5" />
             </div>
-            <DialogTitle className="text-lg font-bold text-slate-900 dark:text-slate-100">Delete Customer</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg font-bold text-foreground">Delete Customer</DialogTitle>
           </div>
-          <DialogDescription className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Are you sure you want to delete <strong className="text-slate-900 dark:text-slate-200">{customer.name}</strong> from{" "}
-            <strong className="text-slate-900 dark:text-slate-200">{customer.company}</strong>? This action cannot be undone.
+          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
+            Are you sure you want to delete <strong className="text-foreground">{customer.name}</strong> from{" "}
+            <strong className="text-foreground">{customer.company}</strong>? This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
 
-        <DialogFooter className="pt-4">
+        <DialogFooter className="pt-4 flex flex-col-reverse sm:flex-row gap-2 sm:gap-0">
           <Button
             type="button"
             variant="ghost"
             onClick={onClose}
-            className="text-slate-500 dark:text-slate-400"
+            className="w-full sm:w-auto text-muted-foreground text-xs"
           >
             Cancel
           </Button>
@@ -69,7 +69,7 @@ export function DeleteConfirmDialog({
             variant="destructive"
             onClick={handleDelete}
             disabled={deleteMutation.isPending}
-            className="bg-rose-600 hover:bg-rose-500 font-semibold text-white"
+            className="w-full sm:w-auto bg-destructive text-destructive-foreground hover:bg-destructive/90 font-semibold text-xs"
           >
             {deleteMutation.isPending ? "Deleting..." : "Delete Customer"}
           </Button>

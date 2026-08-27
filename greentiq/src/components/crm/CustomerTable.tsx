@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@/lib/useVirtualizer";
 import { Customer } from "@/types";
 import { formatDate, getStatusBadgeVariant } from "@/lib/utils";
@@ -85,19 +85,36 @@ export function CustomerTable({
   const allCurrentIds = customers.map((c) => c.id);
   const isAllSelected = allCurrentIds.length > 0 && allCurrentIds.every((id) => selectedIds.includes(id));
 
+  // Dynamically calculate grid columns count based on viewport width
+  const [columnsCount, setColumnsCount] = useState(3);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        setColumnsCount(1);
+      } else if (window.innerWidth < 1024) {
+        setColumnsCount(2);
+      } else {
+        setColumnsCount(3);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Flatten infinite scroll customer pages for Card View
   const flatCustomers = infiniteData?.pages.flatMap((p) => p.data) || customers;
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // Group items into rows of 3 columns for desktop grid layout
-  const columnsCount = 3;
   const totalGridRows = Math.ceil((flatCustomers.length + (hasNextPage ? 1 : 0)) / columnsCount);
 
-  // Virtualizer for Card View Grid Rows with 200px item height including vertical gap
+  // Virtualizer with generous row height (230px mobile, 220px desktop) ensuring card content & buttons never touch borders
   const virtualizer = useVirtualizer({
     count: totalGridRows,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 200,
+    estimateSize: () => (columnsCount === 1 ? 230 : 220),
     overscan: 3,
   });
 
@@ -379,7 +396,7 @@ export function CustomerTable({
         </>
       )}
 
-      {/* 2. CARD VIEW (PROPER VERTICAL AND HORIZONTAL GRID GAPS) */}
+      {/* 2. CARD VIEW (PROPER CARD PADDING & BUTTON MARGINS FOR MOBILE) */}
       {viewMode === "card" && (
         <div
           ref={parentRef}
@@ -409,15 +426,22 @@ export function CustomerTable({
                     height: `${virtualRow.size - 16}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className="mb-4"
                 >
                   {showLoadingInRow ? (
-                    <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-center space-x-2 text-xs text-muted-foreground h-full">
+                    <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-center space-x-2 text-xs text-muted-foreground h-[190px]">
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       <span>Loading more customers...</span>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 h-full">
+                    <div
+                      className={`grid gap-4 ${
+                        columnsCount === 1
+                          ? "grid-cols-1"
+                          : columnsCount === 2
+                          ? "grid-cols-2"
+                          : "grid-cols-3"
+                      }`}
+                    >
                       {rowCustomers.map((customer) => {
                         const isSelected = selectedIds.includes(customer.id);
                         const badgeVariant = getStatusBadgeVariant(customer.status);
@@ -431,23 +455,23 @@ export function CustomerTable({
                           <div
                             key={customer.id}
                             onClick={() => onViewDetails(customer)}
-                            className={`min-w-[260px] max-w-full rounded-xl border border-border bg-card p-4 space-y-3 cursor-pointer shadow-xs hover:border-primary/50 transition-all flex flex-col justify-between ${
+                            className={`w-full min-w-0 rounded-2xl border border-border bg-card p-5 cursor-pointer shadow-xs hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden ${
                               isSelected ? "border-primary bg-primary/5" : ""
                             }`}
                           >
-                            <div className="space-y-3">
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <div onClick={(e) => e.stopPropagation()}>
+                            <div className="space-y-3.5 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center space-x-3 min-w-0 flex-1">
+                                  <div onClick={(e) => e.stopPropagation()} className="shrink-0">
                                     <Checkbox
                                       checked={isSelected}
                                       onCheckedChange={() => onSelectToggle(customer.id)}
                                     />
                                   </div>
-                                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted font-bold text-foreground text-xs border border-border">
+                                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted font-bold text-foreground text-xs border border-border shrink-0">
                                     {initials}
                                   </div>
-                                  <div className="overflow-hidden">
+                                  <div className="min-w-0 flex-1 overflow-hidden">
                                     <h4 className="text-sm font-bold text-foreground truncate">{customer.name}</h4>
                                     <p className="text-xs text-muted-foreground truncate">{customer.company}</p>
                                   </div>
@@ -460,23 +484,23 @@ export function CustomerTable({
                                 </Badge>
                               </div>
 
-                              <div className="space-y-1.5 text-xs text-muted-foreground">
-                                <div className="flex items-center space-x-2">
+                              <div className="space-y-2 text-xs text-muted-foreground min-w-0">
+                                <div className="flex items-center space-x-2 min-w-0">
                                   <Mail className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
                                   <span className="truncate">{customer.email}</span>
                                 </div>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-2 min-w-0">
                                   <Phone className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                                  <span>{customer.phone}</span>
+                                  <span className="truncate">{customer.phone}</span>
                                 </div>
-                                <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-2 min-w-0">
                                   <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground/60 shrink-0" />
-                                  <span>Last contact: {formatDate(customer.lastContactDate)}</span>
+                                  <span className="truncate">Last contact: {formatDate(customer.lastContactDate)}</span>
                                 </div>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-border mt-auto">
+                            <div className="flex items-center justify-end space-x-2 pt-3 border-t border-border mt-4">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -484,7 +508,7 @@ export function CustomerTable({
                                   e.stopPropagation();
                                   onEdit(customer);
                                 }}
-                                className="h-7 text-xs border-border bg-background"
+                                className="h-8 px-3 text-xs border-border bg-background"
                               >
                                 Edit
                               </Button>
@@ -495,7 +519,7 @@ export function CustomerTable({
                                   e.stopPropagation();
                                   onDelete(customer);
                                 }}
-                                className="h-7 text-xs"
+                                className="h-8 px-3 text-xs"
                               >
                                 Delete
                               </Button>
