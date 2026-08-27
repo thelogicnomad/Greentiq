@@ -13,6 +13,7 @@ export function KeyboardShortcutsHelp({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
+      // Prevent shortcut triggers when typing inside inputs, textareas, or open dialogs
       if (
         target &&
         (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||

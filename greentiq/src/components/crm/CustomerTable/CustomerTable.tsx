@@ -81,6 +81,7 @@ export function CustomerTable({
 
   return (
     <div className="space-y-4 relative">
+      {/* Non-blocking background refetching indicator overlay */}
       {isFetching && !isLoading && viewMode === "table" && (
         <div className="absolute inset-0 bg-background/30 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl transition-all">
           <div className="flex items-center space-x-2 bg-card border border-border px-3 py-1.5 rounded-full shadow-md text-xs text-muted-foreground">

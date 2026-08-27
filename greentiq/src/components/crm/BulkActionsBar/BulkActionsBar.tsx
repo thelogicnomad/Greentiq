@@ -21,7 +21,6 @@ export function BulkActionsBar({
 
   return (
     <>
-      {/* 1. MOBILE LAYOUT */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/98 p-3 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom duration-200 text-foreground space-y-2.5">
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center space-x-2">
@@ -82,7 +81,6 @@ export function BulkActionsBar({
         </div>
       </div>
 
-      {/* 2. DESKTOP LAYOUT */}
       <div className="hidden sm:flex fixed bottom-6 left-1/2 z-40 -translate-x-1/2 items-center space-x-3 rounded-2xl border border-border bg-card/95 px-5 py-3 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom duration-200 text-foreground">
         <div className="flex items-center space-x-2 border-r border-border pr-3">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">

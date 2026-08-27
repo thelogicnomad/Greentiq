@@ -40,22 +40,18 @@ import { toast } from "sonner";
 
 export default function CRMDashboardPage() {
   const [activeTab, setActiveTab] = useState<"dashboard" | "contacts" | "deals" | "tasks" | "settings">("dashboard");
-
-  // View Mode: Table vs Card (Item 1 & 2)
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
 
-  // Initialized viewMode based on viewport width on first mount
+  // Automatically default to card view on small viewports
   useEffect(() => {
     if (typeof window !== "undefined" && window.innerWidth < 640) {
       setViewMode("card");
     }
   }, []);
 
-  // Search state with 300ms debounce
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch] = useDebounce(searchQuery, 300);
 
-  // Filter state
   const [filters, setFilters] = useState<FilterState>({
     status: [],
     companies: [],
@@ -65,17 +61,14 @@ export default function CRMDashboardPage() {
     emailContains: undefined,
   });
 
-  // Sorting & Pagination (Table View)
   const [sortBy, setSortBy] = useState<"name" | "email" | "lastContactDate">("lastContactDate");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Bulk selections & Bulk Delete Modal state
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
 
-  // Modals / Drawers state
   const [isFiltersSheetOpen, setIsFiltersSheetOpen] = useState(false);
   const [isAddEditModalOpen, setIsAddEditModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState<Customer | null>(null);
@@ -84,7 +77,7 @@ export default function CRMDashboardPage() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Query parameters composer
+  // Compose query parameters across pagination (Table view) & infinite scroll (Card view)
   const queryParams = {
     search: debouncedSearch || undefined,
     status: filters.status,
@@ -97,10 +90,7 @@ export default function CRMDashboardPage() {
     sortOrder,
   };
 
-  // Table View Query (Paginated)
   const tableQueryResult = useCustomers({ ...queryParams, page, pageSize });
-
-  // Card View Query (Infinite Scroll)
   const infiniteQueryResult = useInfiniteCustomers(queryParams);
 
   const customers = tableQueryResult.data?.data || [];
@@ -111,7 +101,6 @@ export default function CRMDashboardPage() {
   const deleteMutation = useDeleteCustomer();
   const updateMutation = useUpdateCustomer();
 
-  // Active filter count calculation
   const activeFilterCount =
     (filters.status?.length || 0) +
     (filters.companies?.length || 0) +
@@ -120,7 +109,6 @@ export default function CRMDashboardPage() {
     (filters.phoneContains ? 1 : 0) +
     (filters.emailContains ? 1 : 0);
 
-  // Sorting Handler
   const handleSortChange = (column: "name" | "email" | "lastContactDate") => {
     if (sortBy === column) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -131,7 +119,6 @@ export default function CRMDashboardPage() {
     setPage(1);
   };
 
-  // Bulk Selection Handlers
   const handleSelectToggle = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
@@ -147,7 +134,6 @@ export default function CRMDashboardPage() {
     }
   };
 
-  // Bulk Actions: Confirmed Deletion
   const handleBulkDelete = async () => {
     if (selectedIds.length === 0) return;
     try {
@@ -173,7 +159,6 @@ export default function CRMDashboardPage() {
     }
   };
 
-  // CSV Export Feature
   const handleExportCsv = () => {
     const exportList = viewMode === "card"
       ? (infiniteQueryResult.data?.pages.flatMap((p) => p.data) || [])
@@ -212,12 +197,9 @@ export default function CRMDashboardPage() {
 
   return (
     <div className="flex min-h-screen bg-background text-foreground antialiased transition-colors duration-200">
-      {/* App Sidebar (Desktop) */}
       <AppSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Navbar */}
         <TopNavbar
           onOpenAddModal={() => {
             setCustomerToEdit(null);
@@ -225,12 +207,9 @@ export default function CRMDashboardPage() {
           }}
         />
 
-        {/* Page Main Content Body */}
         <main className="flex-1 p-4 sm:p-8 space-y-6 max-w-7xl w-full mx-auto">
-          {/* Top Dashboard Stat Cards */}
           <DashboardStatCards totalCustomers={totalCount} isLoading={tableQueryResult.isLoading} />
 
-          {/* Contacts Section Header & Toolbar */}
           <div className="space-y-4 pt-2">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
@@ -240,9 +219,7 @@ export default function CRMDashboardPage() {
                 </p>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex items-center gap-2">
-                {/* Table / Card View Mode Toggle Group */}
                 <div className="flex items-center space-x-1 border border-border bg-muted/40 p-0.5 rounded-lg h-9">
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -302,9 +279,7 @@ export default function CRMDashboardPage() {
               </div>
             </div>
 
-            {/* Filter & Search Bar */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center rounded-2xl border border-border bg-card p-3 shadow-xs backdrop-blur-md">
-              {/* Search Bar */}
               <div className="relative md:col-span-7 lg:col-span-8">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -331,7 +306,6 @@ export default function CRMDashboardPage() {
                 )}
               </div>
 
-              {/* Quick Status Dropdown Filter */}
               <div className="md:col-span-2 lg:col-span-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -376,7 +350,6 @@ export default function CRMDashboardPage() {
                 </DropdownMenu>
               </div>
 
-              {/* Advanced Filters Button with Badge */}
               <div className="md:col-span-3 lg:col-span-2 flex items-center justify-end">
                 <Button
                   variant="outline"
@@ -400,7 +373,6 @@ export default function CRMDashboardPage() {
             </div>
           </div>
 
-          {/* Customer Table / Card View */}
           <CustomerTable
             customers={customers}
             isLoading={tableQueryResult.isLoading}
@@ -438,7 +410,6 @@ export default function CRMDashboardPage() {
         </main>
       </div>
 
-      {/* Slide-out Advanced Filters Sheet */}
       <AdvancedFiltersSheet
         isOpen={isFiltersSheetOpen}
         onClose={() => setIsFiltersSheetOpen(false)}
@@ -451,7 +422,6 @@ export default function CRMDashboardPage() {
         activeFilterCount={activeFilterCount}
       />
 
-      {/* Customer Details Modal */}
       <CustomerDetailsModal
         customer={customerToView}
         isOpen={Boolean(customerToView)}
@@ -467,7 +437,6 @@ export default function CRMDashboardPage() {
         }}
       />
 
-      {/* Add / Edit Customer Modal */}
       <CustomerFormModal
         isOpen={isAddEditModalOpen}
         onClose={() => {
@@ -477,14 +446,12 @@ export default function CRMDashboardPage() {
         customerToEdit={customerToEdit}
       />
 
-      {/* Single Customer Delete Confirmation Dialog */}
       <DeleteConfirmDialog
         customer={customerToDelete}
         isOpen={Boolean(customerToDelete)}
         onClose={() => setCustomerToDelete(null)}
       />
 
-      {/* Bulk Customer Delete Confirmation Dialog */}
       <BulkDeleteConfirmDialog
         selectedCount={selectedIds.length}
         isOpen={isBulkDeleteModalOpen}
@@ -493,7 +460,6 @@ export default function CRMDashboardPage() {
         isDeleting={deleteMutation.isPending}
       />
 
-      {/* Floating Bulk Actions Bar */}
       <BulkActionsBar
         selectedCount={selectedIds.length}
         onClearSelection={() => setSelectedIds([])}
@@ -502,7 +468,6 @@ export default function CRMDashboardPage() {
         onExportCsv={handleExportCsv}
       />
 
-      {/* Keyboard Shortcuts Listener */}
       <KeyboardShortcutsHelp
         onToggleFilters={() => setIsFiltersSheetOpen((prev) => !prev)}
         onFocusSearch={() => searchInputRef.current?.focus()}

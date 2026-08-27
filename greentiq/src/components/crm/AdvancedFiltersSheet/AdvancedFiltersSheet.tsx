@@ -109,15 +109,12 @@ export function AdvancedFiltersSheet({
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
-      {/* Slide-out Sidebar Panel */}
       <aside className="fixed inset-y-0 right-0 z-50 flex w-full sm:w-[380px] flex-col border-l border-border bg-card text-card-foreground shadow-2xl transition-all animate-in slide-in-from-right duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-border p-4">
           <div className="flex items-center space-x-2">
             <Filter className="h-5 w-5 text-primary" />
@@ -148,9 +145,7 @@ export function AdvancedFiltersSheet({
           </div>
         </div>
 
-        {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 sm:space-y-6">
-          {/* Save Filter Preset Bar */}
           <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 p-3">
             <div className="flex items-center space-x-1.5 min-w-0">
               <span className="text-xs text-foreground font-medium truncate">Save filter combination?</span>
@@ -182,13 +177,11 @@ export function AdvancedFiltersSheet({
             </Button>
           </div>
 
-          {/* 1. Status Filter Group */}
           <StatusFilterGroup
             selectedStatuses={draftFilters.status || []}
             onStatusToggle={handleStatusToggle}
           />
 
-          {/* 2. Company Multi-Select */}
           <CompanyMultiSelect
             availableCompanies={availableCompanies}
             selectedCompanies={draftFilters.companies || []}
@@ -196,7 +189,6 @@ export function AdvancedFiltersSheet({
             onCompanyRemove={handleCompanyRemove}
           />
 
-          {/* 3. Date Range Filter */}
           <DateRangeFilter
             dateFrom={draftFilters.dateFrom}
             dateTo={draftFilters.dateTo}
@@ -210,7 +202,6 @@ export function AdvancedFiltersSheet({
             }}
           />
 
-          {/* 4. Phone Partial Match Input */}
           <div className="space-y-3">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Phone Number Contains
@@ -230,7 +221,6 @@ export function AdvancedFiltersSheet({
             />
           </div>
 
-          {/* 5. Email Partial Match Input */}
           <div className="space-y-3">
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Email Contains
@@ -250,7 +240,6 @@ export function AdvancedFiltersSheet({
             />
           </div>
 
-          {/* 6. Saved Filter Presets */}
           <div className="space-y-3 pt-2 border-t border-border">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -278,7 +267,6 @@ export function AdvancedFiltersSheet({
           </div>
         </div>
 
-        {/* Footer Apply Button */}
         <div className="border-t border-border p-4 bg-muted/40 backdrop-blur-xs">
           <Button onClick={handleApply} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-xs">
             Apply Filters
@@ -286,7 +274,6 @@ export function AdvancedFiltersSheet({
         </div>
       </aside>
 
-      {/* Save Filter Preset Modal */}
       <SaveFilterForm
         isOpen={isSaveModalOpen}
         onClose={() => setIsSaveModalOpen(false)}
