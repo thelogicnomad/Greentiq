@@ -47,7 +47,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
       status: "active",
       jobTitle: "",
       dealValue: undefined,
-      accountOwner: "Alex Rivera",
+      accountOwner: "Akash KS",
       lastContactDate: new Date().toISOString().split("T")[0],
       notes: "",
     },
@@ -247,7 +247,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
               <label className="text-xs font-semibold text-foreground">Account Owner</label>
               <Input
                 {...register("accountOwner")}
-                placeholder="Alex Rivera"
+                placeholder="Akash KS"
                 className="bg-background border-input text-foreground text-xs"
               />
             </div>

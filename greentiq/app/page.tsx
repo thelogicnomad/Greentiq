@@ -7,6 +7,7 @@ import { STATUSES } from "@/lib/api/seed";
 import { useCustomers, useInfiniteCustomers } from "@/hooks/useCustomers";
 import { useDeleteCustomer, useUpdateCustomer } from "@/hooks/useCustomerMutations";
 import { AppSidebar } from "@/components/crm/AppSidebar";
+import { TopNavbar } from "@/components/crm/TopNavbar";
 import { DashboardStatCards } from "@/components/crm/DashboardStatCards";
 import { CustomerTable } from "@/components/crm/CustomerTable";
 import { AdvancedFiltersSheet } from "@/components/crm/AdvancedFiltersSheet";
@@ -38,7 +39,7 @@ import {
 import { toast } from "sonner";
 
 export default function CRMDashboardPage() {
-  const [activeTab, setActiveTab] = useState<"dashboard" | "contacts" | "deals" | "tasks" | "settings">("contacts");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "contacts" | "deals" | "tasks" | "settings">("dashboard");
 
   // View Mode: Table vs Card (Item 1 & 2)
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
@@ -216,22 +217,13 @@ export default function CRMDashboardPage() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header Bar */}
-        <header className="md:hidden flex items-center justify-between border-b border-border bg-card p-4 sticky top-0 z-30">
-          <div className="flex items-center space-x-3">
-            <span className="font-bold text-foreground text-base">Advanced CRM</span>
-          </div>
-          <Button
-            size="sm"
-            onClick={() => {
-              setCustomerToEdit(null);
-              setIsAddEditModalOpen(true);
-            }}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs"
-          >
-            <Plus className="h-4 w-4 mr-1" /> Add
-          </Button>
-        </header>
+        {/* Top Navbar */}
+        <TopNavbar
+          onOpenAddModal={() => {
+            setCustomerToEdit(null);
+            setIsAddEditModalOpen(true);
+          }}
+        />
 
         {/* Page Main Content Body */}
         <main className="flex-1 p-4 sm:p-8 space-y-6 max-w-7xl w-full mx-auto">
