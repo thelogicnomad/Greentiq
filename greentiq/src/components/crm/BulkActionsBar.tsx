@@ -28,22 +28,21 @@ export function BulkActionsBar({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex items-center space-x-3 rounded-2xl border border-slate-700 bg-slate-900/95 px-5 py-3 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom duration-200">
-      <div className="flex items-center space-x-2 border-r border-slate-700 pr-3">
+    <div className="fixed bottom-6 left-1/2 z-40 -translate-x-1/2 flex items-center space-x-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 px-5 py-3 shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom duration-200 text-slate-800 dark:text-slate-200">
+      <div className="flex items-center space-x-2 border-r border-slate-300 dark:border-slate-700 pr-3">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
           {selectedCount}
         </span>
-        <span className="text-xs font-medium text-slate-200">selected</span>
+        <span className="text-xs font-medium text-slate-700 dark:text-slate-200">selected</span>
       </div>
 
-      {/* Bulk Status Update */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 text-xs border-slate-700 bg-slate-800 text-slate-200">
-            <CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-blue-400" /> Change Status
+          <Button variant="outline" size="sm" className="h-8 text-xs border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+            <CheckCircle2 className="mr-1.5 h-3.5 w-3.5 text-blue-500" /> Change Status
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-slate-900 border-slate-800 text-slate-200">
+        <DropdownMenuContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200">
           {STATUSES.map((status) => (
             <DropdownMenuItem
               key={status}
@@ -56,30 +55,27 @@ export function BulkActionsBar({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Bulk Export CSV */}
       <Button
         variant="outline"
         size="sm"
         onClick={onExportCsv}
-        className="h-8 text-xs border-slate-700 bg-slate-800 text-slate-200"
+        className="h-8 text-xs border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
       >
-        <Download className="mr-1.5 h-3.5 w-3.5 text-emerald-400" /> Export CSV
+        <Download className="mr-1.5 h-3.5 w-3.5 text-emerald-500" /> Export CSV
       </Button>
 
-      {/* Bulk Delete */}
       <Button
         variant="destructive"
         size="sm"
         onClick={onBulkDelete}
-        className="h-8 text-xs bg-rose-600 hover:bg-rose-500"
+        className="h-8 text-xs bg-rose-600 hover:bg-rose-500 text-white"
       >
         <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
       </Button>
 
-      {/* Clear Selection */}
       <button
         onClick={onClearSelection}
-        className="ml-2 text-slate-400 hover:text-white transition-colors p-1 rounded"
+        className="ml-2 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors p-1 rounded"
         title="Clear Selection"
       >
         <X className="h-4 w-4" />

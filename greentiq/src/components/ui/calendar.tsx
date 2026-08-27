@@ -1,54 +1,183 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { DayPicker } from "react-day-picker";
+import {
+  format,
+  addMonths,
+  subMonths,
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  isSameMonth,
+  isSameDay,
+  parseISO,
+  isValid,
+  setMonth,
+  setYear,
+} from "date-fns";
 import { cn } from "@/lib/utils";
-import { buttonVariants } from "@/components/ui/button";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export interface CalendarProps {
+  selected?: Date | string;
+  onSelect?: (date: Date) => void;
+  className?: string;
+  mode?: "single";
+  initialFocus?: boolean;
+}
 
-function Calendar({
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+export function Calendar({
+  selected,
+  onSelect,
   className,
-  classNames,
-  showOutsideDays = true,
-  ...props
 }: CalendarProps) {
+  const selectedDate = React.useMemo(() => {
+    if (!selected) return undefined;
+    if (selected instanceof Date) return selected;
+    const parsed = parseISO(selected);
+    return isValid(parsed) ? parsed : undefined;
+  }, [selected]);
+
+  const [currentMonth, setCurrentMonth] = React.useState<Date>(
+    selectedDate || new Date()
+  );
+
+  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newMonthIndex = parseInt(e.target.value, 10);
+    setCurrentMonth((prev) => setMonth(prev, newMonthIndex));
+  };
+
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newYear = parseInt(e.target.value, 10);
+    setCurrentMonth((prev) => setYear(prev, newYear));
+  };
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(monthStart);
+  const startDate = startOfWeek(monthStart);
+  const endDate = endOfWeek(monthEnd);
+
+  const days: Date[] = [];
+  let day = startDate;
+  while (day <= endDate) {
+    days.push(day);
+    day = addDays(day, 1);
+  }
+
+  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  // Generate Year Range (e.g. 2015 to 2035)
+  const currentYearVal = currentMonth.getFullYear();
+  const yearsRange: number[] = [];
+  for (let y = 2015; y <= 2035; y++) {
+    yearsRange.push(y);
+  }
+
   return (
-    <DayPicker
-      showOutsideDays={showOutsideDays}
-      className={cn("p-3 bg-slate-900 text-slate-100 rounded-xl border border-slate-800", className)}
-      classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-        month: "space-y-4",
-        caption: "flex justify-between pt-1 relative items-center px-1",
-        caption_label: "text-sm font-medium text-slate-200",
-        nav: "space-x-1 flex items-center",
-        nav_button: cn(
-          buttonVariants({ variant: "outline" }),
-          "h-7 w-7 bg-transparent p-0 opacity-70 hover:opacity-100"
-        ),
-        nav_button_previous: "absolute left-1",
-        nav_button_next: "absolute right-1",
-        table: "w-full border-collapse space-y-1",
-        head_row: "flex",
-        head_cell: "text-slate-400 rounded-md w-8 font-normal text-[0.8rem]",
-        row: "flex w-full mt-2",
-        cell: "h-8 w-8 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
-        day: cn(
-          buttonVariants({ variant: "ghost" }),
-          "h-8 w-8 p-0 font-normal aria-selected:opacity-100 text-slate-200 hover:bg-slate-800"
-        ),
-        day_selected:
-          "bg-blue-600 text-white hover:bg-blue-500 hover:text-white focus:bg-blue-600 focus:text-white",
-        day_today: "bg-slate-800 text-blue-400 font-bold",
-        day_outside: "text-slate-600 opacity-50",
-        day_disabled: "text-slate-600 opacity-30",
-        day_hidden: "invisible",
-        ...classNames,
-      }}
-      {...props}
-    />
+    <div className={cn("p-4 bg-popover border border-border rounded-2xl shadow-2xl text-popover-foreground w-[300px]", className)}>
+      {/* Calendar Header: Direct Month & Year Select Dropdowns + Navigation Arrows */}
+      <div className="flex items-center justify-between mb-3 px-0.5">
+        <div className="flex items-center space-x-1.5">
+          {/* Month Select */}
+          <select
+            value={currentMonth.getMonth()}
+            onChange={handleMonthChange}
+            className="rounded-lg border border-input bg-background px-2 py-1 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            {MONTHS.map((m, idx) => (
+              <option key={m} value={idx}>
+                {m}
+              </option>
+            ))}
+          </select>
+
+          {/* Year Select */}
+          <select
+            value={currentYearVal}
+            onChange={handleYearChange}
+            className="rounded-lg border border-input bg-background px-2 py-1 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            {yearsRange.map((y) => (
+              <option key={y} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Prev / Next Month Arrow Buttons */}
+        <div className="flex items-center space-x-1">
+          <button
+            type="button"
+            onClick={prevMonth}
+            className="p-1 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            title="Previous Month"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={nextMonth}
+            className="p-1 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            title="Next Month"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Weekday Labels Header */}
+      <div className="grid grid-cols-7 gap-1 text-center mb-1">
+        {weekDays.map((d) => (
+          <span key={d} className="text-[11px] font-semibold text-muted-foreground py-1">
+            {d}
+          </span>
+        ))}
+      </div>
+
+      {/* Days Grid */}
+      <div className="grid grid-cols-7 gap-1 text-center">
+        {days.map((d, idx) => {
+          const isSelected = selectedDate ? isSameDay(d, selectedDate) : false;
+          const isCurrentMonth = isSameMonth(d, currentMonth);
+          const isToday = isSameDay(d, new Date());
+
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => onSelect && onSelect(d)}
+              className={cn(
+                "h-8 w-8 rounded-lg text-xs font-medium flex items-center justify-center transition-all",
+                !isCurrentMonth && "text-muted-foreground/30 opacity-40",
+                isCurrentMonth && !isSelected && "text-foreground hover:bg-accent hover:text-accent-foreground",
+                isToday && !isSelected && "border border-primary text-primary font-bold",
+                isSelected && "bg-primary text-primary-foreground font-bold shadow-sm"
+              )}
+            >
+              {format(d, "d")}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
-Calendar.displayName = "Calendar";
-
-export { Calendar };

@@ -1,10 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { customerSchema, CustomerFormValues } from "@/lib/schemas";
 import { Customer } from "@/types";
 import { STATUSES } from "@/lib/api/seed";
 import { useAddCustomer, useUpdateCustomer } from "@/hooks/useCustomerMutations";
+import { formatDate } from "@/lib/utils";
+import { parseISO, isValid, format } from "date-fns";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +17,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
 
 interface CustomerFormModalProps {
   isOpen: boolean;
@@ -27,8 +32,9 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
 
   const addMutation = useAddCustomer();
   const updateMutation = useUpdateCustomer();
-
   const isPending = addMutation.isPending || updateMutation.isPending;
+
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const {
     register,
@@ -83,6 +89,7 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
   }, [customerToEdit, isOpen, reset]);
 
   const currentStatus = watch("status");
+  const currentLastContactDate = watch("lastContactDate");
 
   const onSubmit = async (values: CustomerFormValues) => {
     try {
@@ -97,11 +104,13 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
     }
   };
 
+  const parsedDate = currentLastContactDate ? parseISO(currentLastContactDate) : undefined;
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-xl bg-slate-900 border-slate-800 text-slate-100">
+      <DialogContent className="sm:max-w-xl bg-card border-border text-card-foreground">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-slate-100">
+          <DialogTitle className="text-xl font-bold">
             {isEditing ? "Edit Customer" : "Add Customer"}
           </DialogTitle>
         </DialogHeader>
@@ -109,86 +118,84 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
           {/* Name */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-300">
-              Name <span className="text-rose-400">*</span>
+            <label className="text-xs font-semibold text-foreground">
+              Name <span className="text-destructive">*</span>
             </label>
             <Input
               {...register("name")}
               placeholder="e.g. John Doe"
-              className={`bg-slate-950 border-slate-800 text-slate-100 ${
-                errors.name ? "border-rose-500" : ""
+              className={`bg-background border-input text-foreground ${
+                errors.name ? "border-destructive" : ""
               }`}
             />
-            {errors.name && <p className="text-[11px] text-rose-400 font-medium">{errors.name.message}</p>}
+            {errors.name && <p className="text-[11px] text-destructive font-medium">{errors.name.message}</p>}
           </div>
 
           {/* Email & Phone Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Email */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">
-                Email <span className="text-rose-400">*</span>
+              <label className="text-xs font-semibold text-foreground">
+                Email <span className="text-destructive">*</span>
               </label>
               <Input
                 {...register("email")}
                 placeholder="john.doe@example.com"
-                className={`bg-slate-950 border-slate-800 text-slate-100 ${
-                  errors.email ? "border-rose-500" : ""
+                className={`bg-background border-input text-foreground ${
+                  errors.email ? "border-destructive" : ""
                 }`}
               />
-              {errors.email && <p className="text-[11px] text-rose-400 font-medium">{errors.email.message}</p>}
+              {errors.email && <p className="text-[11px] text-destructive font-medium">{errors.email.message}</p>}
             </div>
 
-            {/* Phone */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">
-                Phone <span className="text-rose-400">*</span>
+              <label className="text-xs font-semibold text-foreground">
+                Phone <span className="text-destructive">*</span>
               </label>
               <Input
                 {...register("phone")}
                 placeholder="+1 (555) 123-4567"
-                className={`bg-slate-950 border-slate-800 text-slate-100 ${
-                  errors.phone ? "border-rose-500" : ""
+                className={`bg-background border-input text-foreground ${
+                  errors.phone ? "border-destructive" : ""
                 }`}
               />
-              {errors.phone && <p className="text-[11px] text-rose-400 font-medium">{errors.phone.message}</p>}
+              {errors.phone && <p className="text-[11px] text-destructive font-medium">{errors.phone.message}</p>}
             </div>
           </div>
 
           {/* Company & Job Title */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Company</label>
+              <label className="text-xs font-semibold text-foreground">Company</label>
               <Input
                 {...register("company")}
                 placeholder="Acme Corp"
-                className="bg-slate-950 border-slate-800 text-slate-100"
+                className="bg-background border-input text-foreground"
               />
-              {errors.company && <p className="text-[11px] text-rose-400 font-medium">{errors.company.message}</p>}
+              {errors.company && <p className="text-[11px] text-destructive font-medium">{errors.company.message}</p>}
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Job Title</label>
+              <label className="text-xs font-semibold text-foreground">Job Title</label>
               <Input
                 {...register("jobTitle")}
                 placeholder="Marketing Director"
-                className="bg-slate-950 border-slate-800 text-slate-100"
+                className="bg-background border-input text-foreground"
               />
             </div>
           </div>
 
-          {/* Status & Last Contact Date */}
+          {/* Status & Last Contact Date (Trailing single CalendarIcon - Item 3) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Status</label>
+              <label className="text-xs font-semibold text-foreground">Status</label>
               <Select
                 value={currentStatus}
                 onValueChange={(val) => setValue("status", val as any)}
               >
-                <SelectTrigger className="bg-slate-950 border-slate-800 text-slate-100 capitalize">
+                <SelectTrigger className="bg-background border-input text-foreground capitalize">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-900 border-slate-800 text-slate-100">
+                <SelectContent className="bg-popover border-border text-popover-foreground">
                   {STATUSES.map((st) => (
                     <SelectItem key={st} value={st} className="capitalize">
                       {st}
@@ -198,54 +205,76 @@ export function CustomerFormModal({ isOpen, onClose, customerToEdit }: CustomerF
               </Select>
             </div>
 
+            {/* Last Contact Date Field Popover Button (Item 3) */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Last Contact Date</label>
-              <Input
-                type="date"
-                {...register("lastContactDate")}
-                className="bg-slate-950 border-slate-800 text-slate-100"
-              />
+              <label className="text-xs font-semibold text-foreground">Last Contact Date</label>
+              <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-between text-left font-normal text-xs h-9 border-input bg-background text-foreground px-3"
+                  >
+                    <span className="truncate">
+                      {currentLastContactDate ? formatDate(currentLastContactDate, "PPP") : "Select date"}
+                    </span>
+                    <CalendarIcon className="ml-auto h-4 w-4 text-muted-foreground shrink-0" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="z-50 p-0 border-none bg-transparent">
+                  <Calendar
+                    selected={parsedDate && isValid(parsedDate) ? parsedDate : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        setValue("lastContactDate", format(date, "yyyy-MM-dd"));
+                      }
+                      setIsDatePickerOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
           {/* Deal Value & Account Owner */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Deal Value ($)</label>
+              <label className="text-xs font-semibold text-foreground">Deal Value ($)</label>
               <Input
                 type="number"
                 {...register("dealValue")}
                 placeholder="45000"
-                className="bg-slate-950 border-slate-800 text-slate-100"
+                className="bg-background border-input text-foreground"
               />
               {errors.dealValue && (
-                <p className="text-[11px] text-rose-400 font-medium">{errors.dealValue.message}</p>
+                <p className="text-[11px] text-destructive font-medium">{errors.dealValue.message}</p>
               )}
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-300">Account Owner</label>
+              <label className="text-xs font-semibold text-foreground">Account Owner</label>
               <Input
                 {...register("accountOwner")}
                 placeholder="Alex Rivera"
-                className="bg-slate-950 border-slate-800 text-slate-100"
+                className="bg-background border-input text-foreground"
               />
             </div>
           </div>
 
-          <DialogFooter className="pt-4 border-t border-slate-800">
+          <DialogFooter className="pt-4 border-t border-border">
             <Button
               type="button"
               variant="ghost"
               onClick={onClose}
-              className="text-slate-400"
+              className="text-muted-foreground"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="bg-blue-600 hover:bg-blue-500 font-semibold px-6"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-6"
             >
               {isPending
                 ? isEditing

@@ -6,19 +6,32 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { SavedFilterList } from "./SavedFilterList";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Calendar } from "@/components/ui/calendar";
+import { formatDate } from "@/lib/utils";
+import { parseISO, isValid, format } from "date-fns";
 import {
   useSavedFilters,
   useAddSavedFilter,
   useDeleteSavedFilter,
   useReorderSavedFilters,
 } from "@/hooks/useSavedFilters";
-import { X, Filter, BookmarkPlus, RotateCcw, Search, ChevronDown } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  X,
+  Filter,
+  BookmarkPlus,
+  RotateCcw,
+  Search,
+  ChevronDown,
+  Calendar as CalendarIcon,
+  Info,
+  Check,
+} from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@radix-ui/react-popover";
 import {
   Dialog,
   DialogContent,
@@ -44,24 +57,26 @@ export function AdvancedFiltersSheet({
   availableCompanies,
   activeFilterCount,
 }: AdvancedFiltersSheetProps) {
-  // Local transient state for live adjustments before apply (or real-time)
   const [draftFilters, setDraftFilters] = useState<FilterState>(filters);
   const [activeSavedFilterId, setActiveSavedFilterId] = useState<string | undefined>(undefined);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [newPresetName, setNewPresetName] = useState("");
   const [companySearch, setCompanySearch] = useState("");
+  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+
+  // Popover open states for From / To Date Pickers
+  const [isDateFromOpen, setIsDateFromOpen] = useState(false);
+  const [isDateToOpen, setIsDateToOpen] = useState(false);
 
   const { data: savedFilters = [], isLoading: isLoadingSavedFilters } = useSavedFilters();
   const addSavedFilterMutation = useAddSavedFilter();
   const deleteSavedFilterMutation = useDeleteSavedFilter();
   const reorderSavedFiltersMutation = useReorderSavedFilters();
 
-  // Sync draft filters when open or props change
   React.useEffect(() => {
     setDraftFilters(filters);
   }, [filters, isOpen]);
 
-  // Handle status checkbox toggle
   const handleStatusToggle = (status: CustomerStatus) => {
     setDraftFilters((prev) => {
       const current = prev.status || [];
@@ -73,12 +88,14 @@ export function AdvancedFiltersSheet({
     setActiveSavedFilterId(undefined);
   };
 
-  // Handle company multi-select
-  const handleCompanySelect = (company: string) => {
+  const handleCompanyToggle = (company: string) => {
     setDraftFilters((prev) => {
       const current = prev.companies || [];
-      if (current.includes(company)) return prev;
-      return { ...prev, companies: [...current, company] };
+      const isSelected = current.includes(company);
+      const updated = isSelected
+        ? current.filter((c) => c !== company)
+        : [...current, company];
+      return { ...prev, companies: updated };
     });
     setActiveSavedFilterId(undefined);
   };
@@ -91,7 +108,6 @@ export function AdvancedFiltersSheet({
     setActiveSavedFilterId(undefined);
   };
 
-  // Clear all filters
   const handleClearAll = () => {
     const emptyFilters: FilterState = {
       status: [],
@@ -106,20 +122,17 @@ export function AdvancedFiltersSheet({
     onApplyFilters(emptyFilters);
   };
 
-  // Apply current draft filters
   const handleApply = () => {
     onApplyFilters(draftFilters);
     onClose();
   };
 
-  // Apply saved filter combination
   const handleApplySavedFilter = (savedFilter: SavedFilter) => {
     setDraftFilters(savedFilter.filters);
     setActiveSavedFilterId(savedFilter.id);
     onApplyFilters(savedFilter.filters);
   };
 
-  // Save current filter as preset
   const handleSavePreset = async () => {
     if (!newPresetName.trim()) return;
     await addSavedFilterMutation.mutateAsync({
@@ -131,7 +144,6 @@ export function AdvancedFiltersSheet({
     setIsSaveModalOpen(false);
   };
 
-  // Delete saved filter preset
   const handleDeleteSavedFilter = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     deleteSavedFilterMutation.mutate(id);
@@ -140,7 +152,6 @@ export function AdvancedFiltersSheet({
     }
   };
 
-  // Reorder saved filter presets via dnd-kit
   const handleReorderSavedFilters = (orderedIds: string[]) => {
     reorderSavedFiltersMutation.mutate(orderedIds);
   };
@@ -151,6 +162,11 @@ export function AdvancedFiltersSheet({
     c.toLowerCase().includes(companySearch.toLowerCase())
   );
 
+  const selectedCompaniesCount = draftFilters.companies?.length || 0;
+
+  const parsedDateFrom = draftFilters.dateFrom ? parseISO(draftFilters.dateFrom) : undefined;
+  const parsedDateTo = draftFilters.dateTo ? parseISO(draftFilters.dateTo) : undefined;
+
   return (
     <>
       {/* Backdrop */}
@@ -160,14 +176,14 @@ export function AdvancedFiltersSheet({
       />
 
       {/* Slide-out Sidebar Panel */}
-      <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-slate-800/80 bg-slate-900 shadow-2xl transition-all animate-in slide-in-from-right duration-200">
+      <aside className="fixed inset-y-0 right-0 z-50 flex w-full sm:w-[380px] flex-col border-l border-border bg-card text-card-foreground shadow-2xl transition-all animate-in slide-in-from-right duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800 p-4">
+        <div className="flex items-center justify-between border-b border-border p-4">
           <div className="flex items-center space-x-2">
-            <Filter className="h-5 w-5 text-blue-400" />
-            <h3 className="text-base font-semibold text-slate-100">Filters</h3>
+            <Filter className="h-5 w-5 text-primary" />
+            <h3 className="text-base font-semibold text-foreground">Filters</h3>
             {activeFilterCount > 0 && (
-              <Badge variant="default" className="bg-blue-600 font-bold">
+              <Badge variant="default" className="bg-primary text-primary-foreground font-bold">
                 {activeFilterCount}
               </Badge>
             )}
@@ -178,14 +194,14 @@ export function AdvancedFiltersSheet({
                 variant="ghost"
                 size="sm"
                 onClick={handleClearAll}
-                className="h-8 text-xs text-slate-400 hover:text-slate-200"
+                className="h-8 text-xs text-muted-foreground hover:text-foreground"
               >
                 <RotateCcw className="mr-1 h-3.5 w-3.5" /> Clear All
               </Button>
             )}
             <button
               onClick={onClose}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+              className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <X className="h-5 w-5" />
             </button>
@@ -194,31 +210,50 @@ export function AdvancedFiltersSheet({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
-          {/* Action: Save current filter preset */}
-          <div className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-3">
-            <span className="text-xs text-slate-300 font-medium">Save current combination?</span>
+          {/* Save Filter Preset Bar */}
+          <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 p-3">
+            <div className="flex items-center space-x-1.5">
+              <span className="text-xs text-foreground font-medium">Save filter combination?</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-muted-foreground hover:text-foreground p-0.5">
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs text-xs space-y-1 z-50">
+                  <p className="font-semibold border-b border-border/50 pb-1 mb-1">How Saved Filters Work:</p>
+                  <ol className="list-decimal list-inside space-y-0.5 text-[11px] text-muted-foreground">
+                    <li>Set your desired filter criteria</li>
+                    <li>Click <strong>Save Filter</strong> button</li>
+                    <li>Enter a descriptive name</li>
+                    <li>Access & reorder anytime from the list below</li>
+                  </ol>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+
             <Button
               variant="outline"
               size="sm"
               onClick={() => setIsSaveModalOpen(true)}
-              className="h-7 text-xs border-slate-700 bg-slate-900"
+              className="h-7 text-xs border-border bg-background text-foreground"
             >
-              <BookmarkPlus className="mr-1 h-3.5 w-3.5 text-blue-400" /> Save Filter
+              <BookmarkPlus className="mr-1 h-3.5 w-3.5 text-primary" /> Save Filter
             </Button>
           </div>
 
           {/* 1. Status Checkboxes */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Status
             </label>
-            <div className="space-y-2.5 rounded-xl border border-slate-800/80 bg-slate-950/40 p-3.5">
+            <div className="space-y-2.5 rounded-xl border border-border bg-muted/20 p-3.5">
               {STATUSES.map((status) => {
                 const isChecked = (draftFilters.status || []).includes(status);
                 return (
                   <label
                     key={status}
-                    className="flex cursor-pointer items-center space-x-3 text-sm text-slate-200 hover:text-white"
+                    className="flex cursor-pointer items-center space-x-3 text-sm text-foreground hover:text-primary"
                   >
                     <Checkbox
                       checked={isChecked}
@@ -233,21 +268,76 @@ export function AdvancedFiltersSheet({
 
           {/* 2. Company Multi-Select Dropdown */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Company
             </label>
-            {/* Selected Chips */}
+
+            <Popover open={isCompanyDropdownOpen} onOpenChange={setIsCompanyDropdownOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-9 w-full items-center justify-between rounded-lg border border-input bg-background px-3 text-xs text-foreground hover:border-accent focus:outline-none"
+                >
+                  <span className="truncate">
+                    {selectedCompaniesCount === 0
+                      ? "Select Companies..."
+                      : `${selectedCompaniesCount} company${selectedCompaniesCount > 1 ? "s" : ""} selected`}
+                  </span>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="z-50 w-[310px] rounded-lg border border-border bg-popover text-popover-foreground p-2 shadow-xl"
+              >
+                <div className="flex items-center space-x-2 border-b border-border pb-2 mb-2 px-1">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search company..."
+                    value={companySearch}
+                    onChange={(e) => setCompanySearch(e.target.value)}
+                    className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
+                  />
+                </div>
+                <div className="max-h-48 overflow-y-auto space-y-1">
+                  {filteredCompanyOptions.map((comp) => {
+                    const isSelected = (draftFilters.companies || []).includes(comp);
+                    return (
+                      <button
+                        key={comp}
+                        type="button"
+                        onClick={() => handleCompanyToggle(comp)}
+                        className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-xs text-left cursor-pointer transition-colors ${
+                          isSelected
+                            ? "bg-accent text-primary font-semibold"
+                            : "hover:bg-muted text-foreground"
+                        }`}
+                      >
+                        <span className="truncate">{comp}</span>
+                        {isSelected && <Check className="h-3.5 w-3.5 text-primary shrink-0 ml-1" />}
+                      </button>
+                    );
+                  })}
+                  {filteredCompanyOptions.length === 0 && (
+                    <div className="p-2 text-center text-xs text-muted-foreground">No companies found</div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
             {draftFilters.companies && draftFilters.companies.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
+              <div className="flex flex-wrap gap-1.5 pt-1">
                 {draftFilters.companies.map((comp) => (
                   <span
                     key={comp}
-                    className="inline-flex items-center space-x-1 rounded-md bg-blue-500/15 border border-blue-500/30 px-2 py-1 text-xs text-blue-300"
+                    className="inline-flex items-center space-x-1 rounded-md bg-accent border border-border px-2 py-0.5 text-xs text-foreground"
                   >
-                    <span>{comp}</span>
+                    <span className="truncate max-w-[140px]">{comp}</span>
                     <button
+                      type="button"
                       onClick={() => handleCompanyRemove(comp)}
-                      className="text-blue-400 hover:text-white ml-1"
+                      className="text-muted-foreground hover:text-destructive ml-1"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -255,91 +345,83 @@ export function AdvancedFiltersSheet({
                 ))}
               </div>
             )}
-
-            {/* Dropdown Menu for selecting companies */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex h-9 w-full items-center justify-between rounded-lg border border-slate-700 bg-slate-950/60 px-3 text-xs text-slate-300 hover:border-slate-600 focus:outline-none">
-                  <span>Select Companies...</span>
-                  <ChevronDown className="h-4 w-4 text-slate-400" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-72 bg-slate-900 border-slate-800 text-slate-200 p-2">
-                <div className="flex items-center space-x-2 border-b border-slate-800 pb-2 mb-2 px-1">
-                  <Search className="h-3.5 w-3.5 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search company..."
-                    value={companySearch}
-                    onChange={(e) => setCompanySearch(e.target.value)}
-                    className="w-full bg-transparent text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none"
-                  />
-                </div>
-                <div className="max-h-48 overflow-y-auto space-y-1">
-                  {filteredCompanyOptions.map((comp) => {
-                    const isSelected = (draftFilters.companies || []).includes(comp);
-                    return (
-                      <DropdownMenuItem
-                        key={comp}
-                        onClick={() => handleCompanySelect(comp)}
-                        className={`text-xs cursor-pointer ${
-                          isSelected ? "bg-slate-800 text-blue-400 font-semibold" : ""
-                        }`}
-                      >
-                        {comp}
-                      </DropdownMenuItem>
-                    );
-                  })}
-                  {filteredCompanyOptions.length === 0 && (
-                    <div className="p-2 text-center text-xs text-slate-500">No companies found</div>
-                  )}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
 
-          {/* 3. Last Contact Date Range */}
+          {/* 3. Date Range Fields (Exact Local Date Formatting via format(date, "yyyy-MM-dd")) */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Date Range (Last Contact)
             </label>
             <div className="grid grid-cols-2 gap-3">
+              {/* Date From */}
               <div>
-                <span className="text-[11px] text-slate-400 mb-1 block">From</span>
-                <Input
-                  type="date"
-                  value={draftFilters.dateFrom || ""}
-                  onChange={(e) => {
-                    setDraftFilters((prev) => ({
-                      ...prev,
-                      dateFrom: e.target.value || undefined,
-                    }));
-                    setActiveSavedFilterId(undefined);
-                  }}
-                  className="text-xs text-slate-200 bg-slate-950/60"
-                />
+                <span className="text-[11px] text-muted-foreground mb-1 block">From</span>
+                <Popover open={isDateFromOpen} onOpenChange={setIsDateFromOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal text-xs h-9 border-input bg-background text-foreground px-3"
+                    >
+                      <span className="truncate">
+                        {draftFilters.dateFrom ? formatDate(draftFilters.dateFrom, "MMM d, yyyy") : "Pick date"}
+                      </span>
+                      <CalendarIcon className="ml-auto h-4 w-4 text-muted-foreground shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="z-50 p-0 border-none bg-transparent">
+                    <Calendar
+                      selected={parsedDateFrom && isValid(parsedDateFrom) ? parsedDateFrom : undefined}
+                      onSelect={(date) => {
+                        setDraftFilters((prev) => ({
+                          ...prev,
+                          dateFrom: date ? format(date, "yyyy-MM-dd") : undefined,
+                        }));
+                        setActiveSavedFilterId(undefined);
+                        setIsDateFromOpen(false);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
+
+              {/* Date To */}
               <div>
-                <span className="text-[11px] text-slate-400 mb-1 block">To</span>
-                <Input
-                  type="date"
-                  value={draftFilters.dateTo || ""}
-                  onChange={(e) => {
-                    setDraftFilters((prev) => ({
-                      ...prev,
-                      dateTo: e.target.value || undefined,
-                    }));
-                    setActiveSavedFilterId(undefined);
-                  }}
-                  className="text-xs text-slate-200 bg-slate-950/60"
-                />
+                <span className="text-[11px] text-muted-foreground mb-1 block">To</span>
+                <Popover open={isDateToOpen} onOpenChange={setIsDateToOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal text-xs h-9 border-input bg-background text-foreground px-3"
+                    >
+                      <span className="truncate">
+                        {draftFilters.dateTo ? formatDate(draftFilters.dateTo, "MMM d, yyyy") : "Pick date"}
+                      </span>
+                      <CalendarIcon className="ml-auto h-4 w-4 text-muted-foreground shrink-0" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="z-50 p-0 border-none bg-transparent">
+                    <Calendar
+                      selected={parsedDateTo && isValid(parsedDateTo) ? parsedDateTo : undefined}
+                      onSelect={(date) => {
+                        setDraftFilters((prev) => ({
+                          ...prev,
+                          dateTo: date ? format(date, "yyyy-MM-dd") : undefined,
+                        }));
+                        setActiveSavedFilterId(undefined);
+                        setIsDateToOpen(false);
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           </div>
 
           {/* 4. Phone Partial Match Input */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Phone Number Contains
             </label>
             <Input
@@ -353,13 +435,13 @@ export function AdvancedFiltersSheet({
                 }));
                 setActiveSavedFilterId(undefined);
               }}
-              className="text-xs text-slate-200 bg-slate-950/60"
+              className="text-xs text-foreground bg-background border-input"
             />
           </div>
 
           {/* 5. Email Partial Match Input */}
           <div className="space-y-3">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Email Contains
             </label>
             <Input
@@ -373,26 +455,26 @@ export function AdvancedFiltersSheet({
                 }));
                 setActiveSavedFilterId(undefined);
               }}
-              className="text-xs text-slate-200 bg-slate-950/60"
+              className="text-xs text-foreground bg-background border-input"
             />
           </div>
 
-          {/* 6. Saved Filter Presets (with dnd-kit reordering) */}
-          <div className="space-y-3 pt-2 border-t border-slate-800">
+          {/* 6. Saved Filter Presets */}
+          <div className="space-y-3 pt-2 border-t border-border">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Saved Filters
               </label>
-              <span className="text-[10px] text-slate-500">Drag to reorder</span>
+              <span className="text-[10px] text-muted-foreground">Drag to reorder</span>
             </div>
 
             {isLoadingSavedFilters ? (
               <div className="space-y-2">
-                <div className="h-8 rounded-lg bg-slate-800/40 animate-pulse" />
-                <div className="h-8 rounded-lg bg-slate-800/40 animate-pulse" />
+                <div className="h-8 rounded-lg bg-muted animate-pulse" />
+                <div className="h-8 rounded-lg bg-muted animate-pulse" />
               </div>
             ) : savedFilters.length === 0 ? (
-              <p className="text-xs text-slate-500 italic">No saved filters yet.</p>
+              <p className="text-xs text-muted-foreground italic">No saved filters yet.</p>
             ) : (
               <SavedFilterList
                 filters={savedFilters}
@@ -406,8 +488,8 @@ export function AdvancedFiltersSheet({
         </div>
 
         {/* Footer Apply Button */}
-        <div className="border-t border-slate-800 p-4 bg-slate-950/80 backdrop-blur-xs">
-          <Button onClick={handleApply} className="w-full bg-blue-600 hover:bg-blue-500 font-medium">
+        <div className="border-t border-border p-4 bg-muted/40 backdrop-blur-xs">
+          <Button onClick={handleApply} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-medium">
             Apply Filters
           </Button>
         </div>
@@ -415,32 +497,32 @@ export function AdvancedFiltersSheet({
 
       {/* Save Filter Modal */}
       <Dialog open={isSaveModalOpen} onOpenChange={setIsSaveModalOpen}>
-        <DialogContent className="sm:max-w-md bg-slate-900 border-slate-800">
+        <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground">
           <DialogHeader>
-            <DialogTitle className="text-slate-100">Save Filter Combination</DialogTitle>
+            <DialogTitle>Save Filter Combination</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <label className="text-xs font-medium text-slate-300">Filter Preset Name</label>
+            <label className="text-xs font-medium text-foreground">Filter Preset Name</label>
             <Input
               type="text"
               placeholder="e.g. Q3 Tech Prospect Leads"
               value={newPresetName}
               onChange={(e) => setNewPresetName(e.target.value)}
-              className="bg-slate-950 border-slate-800 text-slate-100"
+              className="bg-background border-input text-foreground"
             />
           </div>
           <DialogFooter>
             <Button
               variant="ghost"
               onClick={() => setIsSaveModalOpen(false)}
-              className="text-slate-400"
+              className="text-muted-foreground"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSavePreset}
               disabled={!newPresetName.trim() || addSavedFilterMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-500"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               Save Preset
             </Button>

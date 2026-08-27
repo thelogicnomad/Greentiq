@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export const metadata: Metadata = {
   title: "Advanced CRM Dashboard",
@@ -15,7 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className="antialiased min-h-screen bg-background text-foreground transition-colors duration-200">
-        <Providers>{children}</Providers>
+        <Providers>
+          <TooltipProvider delayDuration={200}>
+            {children}
+          </TooltipProvider>
+        </Providers>
       </body>
     </html>
   );
