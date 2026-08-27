@@ -21,7 +21,7 @@ export function AppSidebar({ activeTab, onTabChange }: AppSidebarProps) {
   ];
 
   return (
-    <aside className="w-64 shrink-0 border-r border-border bg-card p-5 text-card-foreground hidden md:flex md:flex-col justify-between h-screen sticky top-0 transition-colors duration-200">
+    <aside className="w-64 shrink-0 border-r border-sidebar-border bg-sidebar p-5 text-sidebar-foreground hidden md:flex md:flex-col justify-between h-screen sticky top-0 transition-colors duration-200">
       <div className="space-y-8">
         {/* Greentiq Brand Logo */}
         <div className="px-2 pt-1 flex items-center">
