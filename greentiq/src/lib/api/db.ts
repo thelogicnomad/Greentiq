@@ -1,24 +1,62 @@
+import { Redis } from "@upstash/redis";
 import { Customer, CustomerNote, CustomerQueryParams, CustomerStatus, PaginatedCustomersResponse, SavedFilter } from "@/types";
 import { generateSeedCustomers, generateSeedSavedFilters } from "./seed";
 
-// Global singleton in-memory store attached to globalThis for Next.js App Router cross-route consistency
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL
+    ? Redis.fromEnv()
+    : null;
+
 const globalForCRM = globalThis as unknown as {
   customersStore?: Customer[];
   savedFiltersStore?: SavedFilter[];
 };
 
-function getCustomers(): Customer[] {
+const CUSTOMERS_KEY = "crm:customers";
+const SAVED_FILTERS_KEY = "crm:saved-filters";
+
+export async function getCustomers(): Promise<Customer[]> {
+  if (redis) {
+    const existing = await redis.get<Customer[]>(CUSTOMERS_KEY);
+    if (existing && Array.isArray(existing) && existing.length > 0) return existing;
+    const seeded = generateSeedCustomers(150);
+    await redis.set(CUSTOMERS_KEY, seeded);
+    return seeded;
+  }
   if (!globalForCRM.customersStore) {
     globalForCRM.customersStore = generateSeedCustomers(150);
   }
   return globalForCRM.customersStore;
 }
 
-function getSavedFiltersStore(): SavedFilter[] {
+export async function saveCustomers(customers: Customer[]): Promise<void> {
+  if (redis) {
+    await redis.set(CUSTOMERS_KEY, customers);
+  } else {
+    globalForCRM.customersStore = customers;
+  }
+}
+
+export async function getSavedFiltersStore(): Promise<SavedFilter[]> {
+  if (redis) {
+    const existing = await redis.get<SavedFilter[]>(SAVED_FILTERS_KEY);
+    if (existing && Array.isArray(existing) && existing.length > 0) return existing;
+    const seeded = generateSeedSavedFilters();
+    await redis.set(SAVED_FILTERS_KEY, seeded);
+    return seeded;
+  }
   if (!globalForCRM.savedFiltersStore) {
     globalForCRM.savedFiltersStore = generateSeedSavedFilters();
   }
   return globalForCRM.savedFiltersStore;
+}
+
+export async function saveSavedFilters(filters: SavedFilter[]): Promise<void> {
+  if (redis) {
+    await redis.set(SAVED_FILTERS_KEY, filters);
+  } else {
+    globalForCRM.savedFiltersStore = filters;
+  }
 }
 
 export async function simulateLatency(min = 300, max = 600): Promise<void> {
@@ -28,11 +66,10 @@ export async function simulateLatency(min = 300, max = 600): Promise<void> {
 
 export async function queryCustomers(params: CustomerQueryParams): Promise<PaginatedCustomersResponse> {
   await simulateLatency();
-  const allCustomers = getCustomers();
+  const allCustomers = await getCustomers();
 
   let filtered = [...allCustomers];
 
-  // 1. Search filter across name, email, company
   if (params.search && params.search.trim() !== "") {
     const q = params.search.trim().toLowerCase();
     filtered = filtered.filter(
@@ -43,19 +80,16 @@ export async function queryCustomers(params: CustomerQueryParams): Promise<Pagin
     );
   }
 
-  // 2. Status filter
   if (params.status && params.status.length > 0) {
     const statusSet = new Set(params.status);
     filtered = filtered.filter((c) => statusSet.has(c.status));
   }
 
-  // 3. Company filter
   if (params.companies && params.companies.length > 0) {
     const companySet = new Set(params.companies.map((comp) => comp.toLowerCase()));
     filtered = filtered.filter((c) => companySet.has(c.company.toLowerCase()));
   }
 
-  // 4. Date range filter (lastContactDate)
   if (params.dateFrom) {
     const fromTime = new Date(params.dateFrom).getTime();
     if (!isNaN(fromTime)) {
@@ -71,19 +105,16 @@ export async function queryCustomers(params: CustomerQueryParams): Promise<Pagin
     }
   }
 
-  // 5. Phone contains
   if (params.phoneContains && params.phoneContains.trim() !== "") {
     const p = params.phoneContains.trim().toLowerCase();
     filtered = filtered.filter((c) => c.phone.toLowerCase().includes(p));
   }
 
-  // 6. Email contains
   if (params.emailContains && params.emailContains.trim() !== "") {
     const e = params.emailContains.trim().toLowerCase();
     filtered = filtered.filter((c) => c.email.toLowerCase().includes(e));
   }
 
-  // Sorting
   const sortBy = params.sortBy || "lastContactDate";
   const sortOrder = params.sortOrder || "desc";
 
@@ -113,7 +144,6 @@ export async function queryCustomers(params: CustomerQueryParams): Promise<Pagin
     return 0;
   });
 
-  // Pagination
   const page = Math.max(1, params.page || 1);
   const pageSize = Math.max(1, params.pageSize || 10);
   const totalCount = filtered.length;
@@ -136,13 +166,13 @@ export async function queryCustomers(params: CustomerQueryParams): Promise<Pagin
 
 export async function getCustomerById(id: string): Promise<Customer | null> {
   await simulateLatency();
-  const customers = getCustomers();
+  const customers = await getCustomers();
   return customers.find((c) => c.id === id) || null;
 }
 
 export async function addCustomer(newCustomerData: Omit<Customer, "id" | "createdDate" | "lastContactDate" | "notes"> & { lastContactDate?: string; notes?: string }): Promise<Customer> {
   await simulateLatency();
-  const customers = getCustomers();
+  const customers = await getCustomers();
 
   const nowISO = new Date().toISOString();
   const newCustomer: Customer = {
@@ -156,6 +186,7 @@ export async function addCustomer(newCustomerData: Omit<Customer, "id" | "create
   };
 
   customers.unshift(newCustomer);
+  await saveCustomers(customers);
   return newCustomer;
 }
 
@@ -164,7 +195,7 @@ export async function updateCustomer(
   updates: Partial<Omit<Customer, "notes">> & { notes?: string | CustomerNote[] }
 ): Promise<Customer | null> {
   await simulateLatency();
-  const customers = getCustomers();
+  const customers = await getCustomers();
   const index = customers.findIndex((c) => c.id === id);
   if (index === -1) return null;
 
@@ -189,22 +220,24 @@ export async function updateCustomer(
     notes: updatedNotes,
   };
   customers[index] = updated;
+  await saveCustomers(customers);
   return updated;
 }
 
 export async function deleteCustomer(id: string): Promise<boolean> {
   await simulateLatency();
-  const customers = getCustomers();
+  const customers = await getCustomers();
   const index = customers.findIndex((c) => c.id === id);
   if (index === -1) return false;
 
   customers.splice(index, 1);
+  await saveCustomers(customers);
   return true;
 }
 
 export async function addCustomerNote(customerId: string, content: string): Promise<Customer | null> {
   await simulateLatency();
-  const customers = getCustomers();
+  const customers = await getCustomers();
   const customer = customers.find((c) => c.id === customerId);
   if (!customer) return null;
 
@@ -216,31 +249,33 @@ export async function addCustomerNote(customerId: string, content: string): Prom
 
   customer.notes.unshift(newNote);
   customer.lastContactDate = newNote.createdAt;
+  await saveCustomers(customers);
   return customer;
 }
 
 // Saved Filters API
 export async function getSavedFilters(): Promise<SavedFilter[]> {
   await simulateLatency();
-  const filters = getSavedFiltersStore();
+  const filters = await getSavedFiltersStore();
   return [...filters].sort((a, b) => a.order - b.order);
 }
 
 export async function addSavedFilter(filterData: Omit<SavedFilter, "id" | "order">): Promise<SavedFilter> {
   await simulateLatency();
-  const filters = getSavedFiltersStore();
+  const filters = await getSavedFiltersStore();
   const newFilter: SavedFilter = {
     ...filterData,
     id: `filter-${Date.now()}`,
     order: filters.length,
   };
   filters.push(newFilter);
+  await saveSavedFilters(filters);
   return newFilter;
 }
 
 export async function deleteSavedFilter(id: string): Promise<boolean> {
   await simulateLatency();
-  const filters = getSavedFiltersStore();
+  const filters = await getSavedFiltersStore();
   const index = filters.findIndex((f) => f.id === id);
   if (index === -1) return false;
 
@@ -248,12 +283,13 @@ export async function deleteSavedFilter(id: string): Promise<boolean> {
   filters.forEach((f, idx) => {
     f.order = idx;
   });
+  await saveSavedFilters(filters);
   return true;
 }
 
 export async function reorderSavedFilters(orderedIds: string[]): Promise<SavedFilter[]> {
   await simulateLatency();
-  const filters = getSavedFiltersStore();
+  const filters = await getSavedFiltersStore();
 
   const filterMap = new Map(filters.map((f) => [f.id, f]));
   const reordered: SavedFilter[] = [];
@@ -273,6 +309,6 @@ export async function reorderSavedFilters(orderedIds: string[]): Promise<SavedFi
     }
   });
 
-  globalForCRM.savedFiltersStore = reordered;
+  await saveSavedFilters(reordered);
   return reordered;
 }
