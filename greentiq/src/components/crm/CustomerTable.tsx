@@ -110,11 +110,11 @@ export function CustomerTable({
 
   const totalGridRows = Math.ceil((flatCustomers.length + (hasNextPage ? 1 : 0)) / columnsCount);
 
-  // Virtualizer with generous row height (230px mobile, 220px desktop) ensuring card content & buttons never touch borders
+  // Virtualizer with increased desktop/tablet vertical row height (250px desktop vs 230px mobile)
   const virtualizer = useVirtualizer({
     count: totalGridRows,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => (columnsCount === 1 ? 230 : 220),
+    estimateSize: () => (columnsCount === 1 ? 230 : 250),
     overscan: 3,
   });
 
@@ -396,7 +396,7 @@ export function CustomerTable({
         </>
       )}
 
-      {/* 2. CARD VIEW (PROPER CARD PADDING & BUTTON MARGINS FOR MOBILE) */}
+      {/* 2. CARD VIEW (INCREASED DESKTOP VERTICAL GAP) */}
       {viewMode === "card" && (
         <div
           ref={parentRef}
@@ -415,6 +415,9 @@ export function CustomerTable({
               const rowCustomers = flatCustomers.slice(startCustomerIndex, startCustomerIndex + columnsCount);
               const showLoadingInRow = startCustomerIndex >= flatCustomers.length;
 
+              // Vertical gap: 28px on desktop (columnsCount > 1), 16px on mobile (columnsCount === 1)
+              const verticalGap = columnsCount === 1 ? 16 : 28;
+
               return (
                 <div
                   key={virtualRow.key}
@@ -423,18 +426,18 @@ export function CustomerTable({
                     top: 0,
                     left: 0,
                     width: "100%",
-                    height: `${virtualRow.size - 16}px`,
+                    height: `${virtualRow.size - verticalGap}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
                   {showLoadingInRow ? (
-                    <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-center space-x-2 text-xs text-muted-foreground h-[190px]">
+                    <div className="rounded-xl border border-border bg-card p-4 flex items-center justify-center space-x-2 text-xs text-muted-foreground h-full">
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       <span>Loading more customers...</span>
                     </div>
                   ) : (
                     <div
-                      className={`grid gap-4 ${
+                      className={`grid gap-4 h-full ${
                         columnsCount === 1
                           ? "grid-cols-1"
                           : columnsCount === 2
