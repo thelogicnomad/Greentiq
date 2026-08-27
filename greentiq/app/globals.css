@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Linear-inspired light theme tokens (lch) */
+    /* Custom light theme tokens (lch) */
     --background: lch(94.44% 0.5 282 / 1);
     --foreground: lch(19.588% 1.25 282 / 1);
     --card: lch(97.94% 0.5 282);
@@ -50,7 +50,7 @@
   }
 
   .dark {
-    /* Linear-inspired dark theme tokens */
+    /* Custom dark theme tokens */
     --background: #18191c;
     --foreground: #e4e5e9;
     --card: #1e2022;
